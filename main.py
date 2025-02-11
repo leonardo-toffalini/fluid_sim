@@ -1,5 +1,14 @@
 import pygame as pg
 import numpy as np
+import tyro
+from dataclasses import dataclass
+
+
+@dataclass
+class Args:
+    WIDTH: int = 800
+    HEIGHT: int = 600
+    cell_size: int = 50
 
 
 def draw_grid(grid: np.ndarray, cell_width: int) -> None:
@@ -13,18 +22,14 @@ def draw_grid(grid: np.ndarray, cell_width: int) -> None:
             pg.draw.rect(screen, color, cell)
 
 
-def main():
+def main(args):
     pg.init()
 
-    WIDTH = 800
-    HEIGHT = 600
-
-    cell_width = 50
-    rows, cols = HEIGHT // cell_width, WIDTH // cell_width
+    rows, cols = args.HEIGHT // args.cell_size, args.WIDTH // args.cell_size
     low, high = 25, 225
     grid = np.random.randint(low, high, size=(rows, cols))
 
-    screen = pg.display.set_mode((WIDTH, HEIGHT))
+    screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
     pg.display.set_caption("Fluid simulation")
 
     running = True
@@ -38,14 +43,13 @@ def main():
         screen.fill((25, 25, 25))
         # uncomment to make hangya foci
         # grid = np.random.randint(low, high, size=(rows, cols))
-        draw_grid(grid, cell_width)
+        draw_grid(grid, args.cell_size)
         pg.display.flip()
         clock.tick(60)
 
     pg.quit()
 
-    pass
-
 
 if __name__ == "__main__":
-    main()
+    args = tyro.cli(Args)
+    main(args)
