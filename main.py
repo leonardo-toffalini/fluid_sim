@@ -2,6 +2,7 @@ import pygame as pg
 import numpy as np
 import tyro
 from dataclasses import dataclass
+from engine import draw_grid, add_source, diffuse_bad, diffuse
 
 
 @dataclass
@@ -11,42 +12,15 @@ class Args:
     cell_size: int = 50
 
 
-def clamp(low, high, val):
-    return max(low, min(high, val))
-
-
-def draw_grid(grid: np.ndarray, cell_width: int) -> None:
-    screen = pg.display.get_surface()
-    grid_height, grid_width = grid.shape
-
-    for y in range(grid_height):
-        for x in range(grid_width):
-            c = clamp(0, 255, grid[y, x])
-            color = (c, c, c)
-            cell = pg.Rect(x * cell_width, y * cell_width, cell_width, cell_width)
-            pg.draw.rect(screen, color, cell)
-
-
-def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
-    assert grid.shape == source.shape
-
-    grid_copy = np.copy(grid)  # we copy the original grid to not mutate it
-    rows, cols = grid_copy.shape
-
-    for i in range(rows):
-        for j in range(cols):
-            grid_copy[i, j] += dt * source[i, j]
-
-    return grid_copy
-
-
 def main(args):
     pg.init()
 
-    rows, cols = args.HEIGHT // args.cell_size, args.WIDTH // args.cell_size
-    low, high = 25, 225
+    # note, that grid has 2 extra rows and columns, these are the boundaries
+    rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
     grid = np.zeros(shape=(rows, cols))
-    source = np.ones_like(grid)
+    source = np.zeros_like(grid)
+    source[rows // 2, cols // 2] = 10
+    grid = add_source(grid, source, 1)
 
     screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
     pg.display.set_caption("Fluid simulation")
@@ -60,8 +34,7 @@ def main(args):
                 running = False
 
         screen.fill((25, 25, 25))
-        # uncomment to make hangya foci
-        # grid = np.random.randint(low, high, size=(rows, cols))
+        grid = diffuse(grid, 0.00015, 1)
         grid = add_source(grid, source, 1)
         draw_grid(grid, args.cell_size)
         pg.display.flip()

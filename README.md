@@ -22,3 +22,7 @@ conda env create -f environment.yaml
     - [ ] Add advection
 
 - [ ] Implement evolving velocities
+
+- [ ] Possible optimization:
+    Don't copy grid on each function call.
+    Instead, pass around two pointers to two grids and only mutate one while we take values from the other, just like double buffer rendering.
