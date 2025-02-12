@@ -5,10 +5,11 @@ python main.py --help
 ```
 
 ### Requirements
-```txt
-- pygame
-- numpy
-- tyro
+For the list of requirements, see `environment.yaml`.
+
+If you are using anaconda or miniconda create a conda environment with the following command:
+```sh
+conda env create -f environment.yaml
 ```
 
 ### TODO
