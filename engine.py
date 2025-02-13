@@ -76,6 +76,10 @@ def diffuse(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
     return new_grid
 
 
+def advect(grid: np.ndarray) -> np.ndarray:
+    raise NotImplementedError
+
+
 def set_bound(grid: np.ndarray) -> np.ndarray:
     new_grid = np.copy(grid)
     rows, cols = grid.shape
@@ -88,3 +92,12 @@ def set_bound(grid: np.ndarray) -> np.ndarray:
         new_grid[rows - 1, j] = 0
 
     return new_grid
+
+
+def dense_step(
+    grid: np.ndarray, source: np.ndarray, diff: float, dt: float
+) -> np.ndarray:
+    grid = add_source(grid, source, dt)
+    grid = diffuse(grid, diff, dt)
+    # grid = advect(grid)
+    return grid
