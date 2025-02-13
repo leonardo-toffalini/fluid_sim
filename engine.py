@@ -1,5 +1,43 @@
+from typing import Tuple
 import pygame as pg
 import numpy as np
+
+
+def test_scenario_1(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    and there is only constant right directed, laminar wind.
+
+    Returns:
+        grid, source, u, v
+    """
+    grid = np.zeros(shape=(rows, cols))
+    u = np.zeros_like(grid)
+    v = np.ones_like(grid) / 120
+    source = np.zeros_like(grid)
+    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
+
+    return grid, source, u, v
+
+
+def test_scenario_2(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there are three dot sources in the middle with no wind.
+
+    Returns:
+        grid, source, u, v
+    """
+    grid = np.zeros(shape=(rows, cols))
+    u = np.zeros_like(grid)
+    v = np.zeros_like(grid)
+    source = np.zeros_like(grid)
+    source[2 * rows // 3, cols // 2] = 200
+    source[rows // 2, cols // 3] = 200
+    source[rows // 2, 2 * cols // 3] = 200
+
+    return grid, source, u, v
 
 
 def clamp(low, high, val):
@@ -22,6 +60,7 @@ def draw_grid(grid: np.ndarray, cell_width: int) -> None:
 
 
 def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
+    """Returns a new modified grid, where the sources are added to each corresponding cells"""
     assert grid.shape == source.shape
 
     grid_copy = np.copy(grid)  # we copy the original grid to not mutate it
@@ -35,6 +74,7 @@ def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
 
 
 def diffuse_bad(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
+    """Returns a new modified grid, where each cell's value is diffused. This method can be unstable."""
     new_grid = np.zeros_like(grid)
     rows, cols = grid.shape
     a = dt * diff * rows * cols
@@ -54,11 +94,12 @@ def diffuse_bad(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
 
 
 def diffuse(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
+    """Returns a new modified grid, where each cell's value is diffused."""
     new_grid = np.zeros_like(grid)
     rows, cols = grid.shape
     a = dt * diff * rows * cols
 
-    for k in range(20):
+    for _ in range(20):
         for i in range(1, rows - 1):
             for j in range(1, cols - 1):
                 new_grid[i, j] = (
@@ -76,8 +117,32 @@ def diffuse(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
     return new_grid
 
 
-def advect(grid: np.ndarray) -> np.ndarray:
-    raise NotImplementedError
+def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndarray:
+    """Returns a new modified grid, where the velocities, u and v, are applied to the grid cell values."""
+    new_grid = np.copy(grid)
+    rows, cols = grid.shape
+    dt0 = dt * rows
+
+    for i in range(1, rows - 1):
+        for j in range(1, cols - 1):
+            x = i - dt0 * u[i, j]
+            y = j - dt0 * v[i, j]
+            x = clamp(0.5, rows + 0.5, x)
+            y = clamp(0.5, rows + 0.5, y)
+            i0 = int(x)
+            j0 = int(y)
+            i1 = i0 + 1
+            j1 = j0 + 1
+            s1 = x - i0
+            s0 = 1 - s1
+            t1 = y - j0
+            t0 = 1 - t1
+            new_grid[i, j] = s0 * (t0 * grid[i0, j0] + t1 * grid[i0, j1]) + s1 * (
+                t0 * grid[i1, j0] + t1 * grid[i1, j1]
+            )
+
+    new_grid = set_bound(new_grid)
+    return new_grid
 
 
 def set_bound(grid: np.ndarray) -> np.ndarray:
@@ -95,9 +160,16 @@ def set_bound(grid: np.ndarray) -> np.ndarray:
 
 
 def dense_step(
-    grid: np.ndarray, source: np.ndarray, diff: float, dt: float
+    grid: np.ndarray,
+    source: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    diff: float,
+    dt: float,
 ) -> np.ndarray:
+    """Simulates on step for the density simulation. Returns a new modified grid.
+    add sources, diffusion, advection"""
     grid = add_source(grid, source, dt)
     grid = diffuse(grid, diff, dt)
-    # grid = advect(grid)
+    grid = advect(grid, u, v, dt)
     return grid

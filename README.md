@@ -19,7 +19,8 @@ conda env create -f environment.yaml
     - [x] Add sources
     - [x] Add diffusion
         - [x] Maybe try both diffusion methods, naive and Gauss-Seidel
-    - [ ] Add advection
+    - [x] Add advection
+    - [ ] Add set boundaries
 
 - [ ] Implement evolving velocities
 
