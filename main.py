@@ -24,6 +24,8 @@ def main(args):
             grid, source, u, v = engine.test_scenario_1(rows, cols)
         case 2:
             grid, source, u, v = engine.test_scenario_2(rows, cols)
+        case 3:
+            grid, source, u, v = engine.test_scenario_3(rows, cols)
         case x:
             assert False, f"There is no test scenario with number {x}"
 

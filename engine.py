@@ -2,6 +2,8 @@ from typing import Tuple
 import pygame as pg
 import numpy as np
 
+from utils import generate_perlin_noise_2d
+
 
 def test_scenario_1(
     rows: int, cols: int
@@ -14,7 +16,7 @@ def test_scenario_1(
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
-    v = np.ones_like(grid) / 120
+    v = np.ones_like(grid) / 50
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 
@@ -36,6 +38,26 @@ def test_scenario_2(
     source[2 * rows // 3, cols // 2] = 200
     source[rows // 2, cols // 3] = 200
     source[rows // 2, 2 * cols // 3] = 200
+
+    return grid, source, u, v
+
+
+def test_scenario_3(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    and there is right facing wind with perlin noise.
+
+    Returns:
+        grid, source, u, v
+    """
+    grid = np.zeros(shape=(rows, cols))
+    u = np.zeros_like(grid)
+    print(grid.shape)
+    noise = generate_perlin_noise_2d(grid.shape, res=(2, 2))
+    v = np.ones_like(grid) / 200 + noise / 30
+    source = np.zeros_like(grid)
+    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 
     return grid, source, u, v
 
@@ -127,8 +149,8 @@ def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndar
         for j in range(1, cols - 1):
             x = i - dt0 * u[i, j]
             y = j - dt0 * v[i, j]
-            x = clamp(0.5, rows + 0.5, x)
-            y = clamp(0.5, rows + 0.5, y)
+            x = clamp(0.5, rows - 0.5, x)
+            y = clamp(0.5, cols - 0.5, y)
             i0 = int(x)
             j0 = int(y)
             i1 = i0 + 1
@@ -148,23 +170,26 @@ def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndar
 def set_bound(grid: np.ndarray) -> np.ndarray:
     new_grid = np.copy(grid)
     rows, cols = grid.shape  # rows = N + 2, cols = M + 2
-    for i in range(1, rows - 1):
-        new_grid[i, 0] = 0 # grid[i, 1]
-        new_grid[i, cols - 1] = 0 # grid[i, cols - 2]
+    new_grid[:, 0] = 0
+    new_grid[:, cols - 1] = 0
+    new_grid[0] = 0
+    new_grid[rows - 1] = 0
 
-    for j in range(1, cols - 1):
-        new_grid[0, j] = 0 # grid[1, j]
-        new_grid[rows - 1, j] = 0 # grid[rows - 2, j]
+    # for i in range(1, rows - 1):
+    #     new_grid[i, 0] = grid[i, 1]
+    #     new_grid[i, cols - 1] = grid[i, cols - 2]
 
-    new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
-    new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, 1])
-    new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[0, 1])
-    new_grid[rows - 1, cols - 1] = 0.5 * (
-        grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
-    )
+    # for j in range(1, cols - 1):
+    #     new_grid[0, j] = grid[1, j]
+    #     new_grid[rows - 1, j] = grid[rows - 2, j]
 
-    print(grid[:, -1])
-    print(new_grid[:, -1])
+    # new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
+    # new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, 1])
+    # new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[0, 1])
+    # new_grid[rows - 1, cols - 1] = 0.5 * (
+    #     grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
+    # )
+
     return new_grid
 
 
@@ -181,5 +206,4 @@ def dense_step(
     grid = add_source(grid, source, dt)
     grid = diffuse(grid, diff, dt)
     grid = advect(grid, u, v, dt)
-    input("press enter to continue")
     return grid
