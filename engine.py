@@ -147,15 +147,24 @@ def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndar
 
 def set_bound(grid: np.ndarray) -> np.ndarray:
     new_grid = np.copy(grid)
-    rows, cols = grid.shape
-    for i in range(rows):
-        new_grid[i, 0] = 0
-        new_grid[i, cols - 1] = 0
+    rows, cols = grid.shape  # rows = N + 2, cols = M + 2
+    for i in range(1, rows - 1):
+        new_grid[i, 0] = 0 # grid[i, 1]
+        new_grid[i, cols - 1] = 0 # grid[i, cols - 2]
 
-    for j in range(rows):
-        new_grid[0, j] = 0
-        new_grid[rows - 1, j] = 0
+    for j in range(1, cols - 1):
+        new_grid[0, j] = 0 # grid[1, j]
+        new_grid[rows - 1, j] = 0 # grid[rows - 2, j]
 
+    new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
+    new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, 1])
+    new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[0, 1])
+    new_grid[rows - 1, cols - 1] = 0.5 * (
+        grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
+    )
+
+    print(grid[:, -1])
+    print(new_grid[:, -1])
     return new_grid
 
 
@@ -172,4 +181,5 @@ def dense_step(
     grid = add_source(grid, source, dt)
     grid = diffuse(grid, diff, dt)
     grid = advect(grid, u, v, dt)
+    input("press enter to continue")
     return grid
