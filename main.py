@@ -1,7 +1,7 @@
 import pygame as pg
 import tyro
 from dataclasses import dataclass
-from engine import draw_grid, dense_step
+from engine import draw_grid, dense_step, vel_step
 import engine
 
 
@@ -44,6 +44,7 @@ def main(args):
         screen.fill((25, 25, 25))
 
         ### Core logic
+        u, v = vel_step(u, v, visc=0, dt=1)
         grid = dense_step(grid, source, u, v, diff=0.00015, dt=1)
         draw_grid(grid, args.cell_size)
 

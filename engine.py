@@ -115,7 +115,7 @@ def diffuse_bad(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
     return new_grid
 
 
-def diffuse(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
+def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
     """Returns a new modified grid, where each cell's value is diffused."""
     new_grid = np.zeros_like(grid)
     rows, cols = grid.shape
@@ -135,11 +135,13 @@ def diffuse(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
                     )
                 ) / (1 + 4 * a)
 
-    new_grid = set_bound(new_grid, 0)
+    new_grid = set_bound(new_grid, b)
     return new_grid
 
 
-def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndarray:
+def advect(
+    grid: np.ndarray, b: int, u: np.ndarray, v: np.ndarray, dt: float
+) -> np.ndarray:
     """Returns a new modified grid, where the velocities, u and v, are applied to the grid cell values."""
     new_grid = np.copy(grid)
     rows, cols = grid.shape
@@ -163,8 +165,42 @@ def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndar
                 t0 * grid[i1, j0] + t1 * grid[i1, j1]
             )
 
-    new_grid = set_bound(new_grid, 0)
+    new_grid = set_bound(new_grid, b)
     return new_grid
+
+
+def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    div = np.zeros_like(u)
+    p = np.zeros_like(div)
+    rows, cols = div.shape
+    h = 1.0 / max(rows, cols)
+
+    for i in range(1, rows - 1):
+        for j in range(1, cols - 1):
+            div[i, j] = (
+                -0.5 * h * (u[i + 1, j] - u[i - 1, j] + v[i, j + 1] - v[i, j - 1])
+            )
+
+    div = set_bound(div, 0)
+    p = set_bound(p, 0)
+
+    for _ in range(20):
+        for i in range(1, rows - 1):
+            for j in range(1, cols - 1):
+                p[i, j] = (
+                    div[i, j] + p[i - 1, j] + p[i + 1, j] + p[i, j - 1] + p[i, j + 1]
+                ) / 4
+
+        p = set_bound(p, 0)
+
+    for i in range(1, rows - 1):
+        for j in range(1, cols - 1):
+            u[i, j] -= 0.5 * (p[i + 1, j] - p[i - 1, j]) / h
+            v[i, j] -= 0.5 * (p[i, j + 1] - p[i, j - 1]) / h
+
+    u = set_bound(u, 1)
+    v = set_bound(v, 2)
+    return u, v
 
 
 def set_bound_bad(grid: np.ndarray) -> np.ndarray:
@@ -207,6 +243,18 @@ def dense_step(
     """Simulates on step for the density simulation. Returns a new modified grid.
     add sources, diffusion, advection"""
     grid = add_source(grid, source, dt)
-    grid = diffuse(grid, diff, dt)
-    grid = advect(grid, u, v, dt)
+    grid = diffuse(grid, 0, diff, dt)
+    grid = advect(grid, 0, u, v, dt)
     return grid
+
+
+def vel_step(
+    u: np.ndarray, v: np.ndarray, visc: float, dt: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    u = diffuse(u, 1, visc, dt)
+    v = diffuse(v, 2, visc, dt)
+    u, v = project(u, v)
+    u = advect(u, 1, u, v, dt)
+    v = advect(v, 2, u, v, dt)
+    u, v = project(u, v)
+    return u, v
