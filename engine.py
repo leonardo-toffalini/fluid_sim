@@ -2,7 +2,7 @@ from typing import Tuple
 import pygame as pg
 import numpy as np
 
-from utils import generate_perlin_noise_2d
+from utils import apply_kernel, generate_perlin_noise_2d
 
 
 def test_scenario_1(
@@ -86,32 +86,20 @@ def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
     assert grid.shape == source.shape
 
     grid_copy = np.copy(grid)  # we copy the original grid to not mutate it
-    rows, cols = grid_copy.shape
-
-    for i in range(rows):
-        for j in range(cols):
-            grid_copy[i, j] += dt * source[i, j]
-
+    grid_copy = grid + dt * source
     return grid_copy
 
 
-def diffuse_bad(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
+def diffuse_bad(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
     """Returns a new modified grid, where each cell's value is diffused. This method can be unstable."""
     new_grid = np.zeros_like(grid)
     rows, cols = grid.shape
     a = dt * diff * rows * cols
+    kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
 
-    for i in range(1, rows - 1):
-        for j in range(1, cols - 1):
-            new_grid[i, j] = grid[i, j] + a * (
-                grid[i - 1, j]
-                + grid[i + 1, j]
-                + grid[i, j - 1]
-                + grid[i, j + 1]
-                - 4 * grid[i, j]
-            )
+    new_grid[1:-1, 1:-1] = grid[1:-1, 1:-1] + a * apply_kernel(grid[1:-1, 1:-1], kernel)
 
-    new_grid = set_bound(new_grid, 0)
+    new_grid = set_bound(new_grid, b)
     return new_grid
 
 
@@ -122,18 +110,14 @@ def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
     a = dt * diff * rows * cols
 
     for _ in range(20):
-        for i in range(1, rows - 1):
-            for j in range(1, cols - 1):
-                new_grid[i, j] = (
-                    grid[i, j]
-                    + a
-                    * (
-                        new_grid[i - 1, j]
-                        + new_grid[i + 1, j]
-                        + new_grid[i, j - 1]
-                        + new_grid[i, j + 1]
-                    )
-                ) / (1 + 4 * a)
+        up = new_grid[:-2, 1:-1]
+        down = new_grid[2:, 1:-1]
+        left = new_grid[1:-1, :-2]
+        right = new_grid[1:-1, 2:]
+
+        new_grid[1:-1, 1:-1] = (grid[1:-1, 1:-1] + a * (up + down + left + right)) / (
+            1 + 4 * a
+        )
 
     new_grid = set_bound(new_grid, b)
     return new_grid
@@ -147,23 +131,28 @@ def advect(
     rows, cols = grid.shape
     dt0 = dt * rows
 
-    for i in range(1, rows - 1):
-        for j in range(1, cols - 1):
-            x = i - dt0 * u[i, j]
-            y = j - dt0 * v[i, j]
-            x = clamp(0.5, rows - 0.5, x)
-            y = clamp(0.5, cols - 0.5, y)
-            i0 = int(x)
-            j0 = int(y)
-            i1 = i0 + 1
-            j1 = j0 + 1
-            s1 = x - i0
-            s0 = 1 - s1
-            t1 = y - j0
-            t0 = 1 - t1
-            new_grid[i, j] = s0 * (t0 * grid[i0, j0] + t1 * grid[i0, j1]) + s1 * (
-                t0 * grid[i1, j0] + t1 * grid[i1, j1]
-            )
+    i, j = np.meshgrid(np.arange(1, rows - 1), np.arange(1, cols - 1), indexing="ij")
+
+    x = i - dt0 * u[1:-1, 1:-1]
+    y = j - dt0 * v[1:-1, 1:-1]
+
+    x = np.clip(x, 0.5, rows - 0.5)
+    y = np.clip(y, 0.5, cols - 0.5)
+
+    # Calculate indices and weights
+    i0 = x.astype(int)
+    j0 = y.astype(int)
+    i1 = i0 + 1
+    j1 = j0 + 1
+    s1 = x - i0
+    s0 = 1 - s1
+    t1 = y - j0
+    t0 = 1 - t1
+
+    # Perform bilinear interpolation
+    new_grid[1:-1, 1:-1] = s0 * (t0 * grid[i0, j0] + t1 * grid[i0, j1]) + s1 * (
+        t0 * grid[i1, j0] + t1 * grid[i1, j1]
+    )
 
     new_grid = set_bound(new_grid, b)
     return new_grid
@@ -175,28 +164,34 @@ def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     rows, cols = div.shape
     h = 1.0 / max(rows, cols)
 
-    for i in range(1, rows - 1):
-        for j in range(1, cols - 1):
-            div[i, j] = (
-                -0.5 * h * (u[i + 1, j] - u[i - 1, j] + v[i, j + 1] - v[i, j - 1])
-            )
+    up_u = p[:-2, 1:-1]
+    down_u = p[2:, 1:-1]
+    left_v = p[1:-1, :-2]
+    right_v = p[1:-1, 2:]
+
+    div[1:-1, 1:-1] = -0.5 * h * (up_u - down_u + right_v - left_v)
+
 
     div = set_bound(div, 0)
     p = set_bound(p, 0)
 
     for _ in range(20):
-        for i in range(1, rows - 1):
-            for j in range(1, cols - 1):
-                p[i, j] = (
-                    div[i, j] + p[i - 1, j] + p[i + 1, j] + p[i, j - 1] + p[i, j + 1]
-                ) / 4
+        up = p[:-2, 1:-1]
+        down = p[2:, 1:-1]
+        left = p[1:-1, :-2]
+        right = p[1:-1, 2:]
+
+        p[1:-1, 1:-1] = (div[1:-1, 1:-1] + up + down + left + right) / 4
 
         p = set_bound(p, 0)
 
-    for i in range(1, rows - 1):
-        for j in range(1, cols - 1):
-            u[i, j] -= 0.5 * (p[i + 1, j] - p[i - 1, j]) / h
-            v[i, j] -= 0.5 * (p[i, j + 1] - p[i, j - 1]) / h
+    up = p[:-2, 1:-1]
+    down = p[2:, 1:-1]
+    left = p[1:-1, :-2]
+    right = p[1:-1, 2:]
+
+    u[1:-1, 1:-1] = u[1:-1, 1:-1] - 0.5 * (up - down) / h
+    v[1:-1, 1:-1] = v[1:-1, 1:-1] - 0.5 * (right - left) / h
 
     u = set_bound(u, 1)
     v = set_bound(v, 2)
