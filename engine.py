@@ -16,7 +16,7 @@ def test_scenario_1(
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
-    v = np.ones_like(grid) / 50
+    v = np.ones_like(grid) / 25
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 
@@ -111,7 +111,7 @@ def diffuse_bad(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
                 - 4 * grid[i, j]
             )
 
-    new_grid = set_bound(new_grid)
+    new_grid = set_bound(new_grid, 0)
     return new_grid
 
 
@@ -135,7 +135,7 @@ def diffuse(grid: np.ndarray, diff: float, dt: float) -> np.ndarray:
                     )
                 ) / (1 + 4 * a)
 
-    new_grid = set_bound(new_grid)
+    new_grid = set_bound(new_grid, 0)
     return new_grid
 
 
@@ -163,32 +163,35 @@ def advect(grid: np.ndarray, u: np.ndarray, v: np.ndarray, dt: float) -> np.ndar
                 t0 * grid[i1, j0] + t1 * grid[i1, j1]
             )
 
-    new_grid = set_bound(new_grid)
+    new_grid = set_bound(new_grid, 0)
     return new_grid
 
 
-def set_bound(grid: np.ndarray) -> np.ndarray:
+def set_bound_bad(grid: np.ndarray) -> np.ndarray:
     new_grid = np.copy(grid)
-    rows, cols = grid.shape  # rows = N + 2, cols = M + 2
+    rows, cols = grid.shape
     new_grid[:, 0] = 0
     new_grid[:, cols - 1] = 0
     new_grid[0] = 0
     new_grid[rows - 1] = 0
 
-    # for i in range(1, rows - 1):
-    #     new_grid[i, 0] = grid[i, 1]
-    #     new_grid[i, cols - 1] = grid[i, cols - 2]
+    return new_grid
 
-    # for j in range(1, cols - 1):
-    #     new_grid[0, j] = grid[1, j]
-    #     new_grid[rows - 1, j] = grid[rows - 2, j]
 
-    # new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
-    # new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, 1])
-    # new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[0, 1])
-    # new_grid[rows - 1, cols - 1] = 0.5 * (
-    #     grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
-    # )
+def set_bound(grid: np.ndarray, b: int) -> np.ndarray:
+    new_grid = np.copy(grid)
+    rows, cols = grid.shape
+    new_grid[0, :] = -grid[1, :] if b == 1 else grid[1, :]
+    new_grid[rows - 1, :] = -grid[rows - 2, :] if b == 1 else grid[rows - 2, :]
+    new_grid[:, 0] = -grid[:, 1] if b == 2 else grid[:, 1]
+    new_grid[:, cols - 1] = -grid[:, cols - 2] if b == 2 else grid[:, cols - 2]
+
+    new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
+    new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
+    new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[rows - 1, 1])
+    new_grid[rows - 1, cols - 1] = 0.5 * (
+        grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
+    )
 
     return new_grid
 
