@@ -30,6 +30,8 @@ def main(args):
             assert False, f"There is no test scenario with number {x}"
 
     screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
+    background = pg.Surface(screen.get_size(), pg.SRCALPHA)
+    background.fill((65, 120, 155, 80))
     pg.display.set_caption("Fluid simulation")
     font = pg.font.Font(None, 36)
 
@@ -41,11 +43,12 @@ def main(args):
             if event.type == pg.QUIT:
                 running = False
 
-        screen.fill((25, 25, 25))
+        # screen.fill((109, 203, 225))
+        screen.blit(background, (0, 0))
 
         ### Core logic
-        u, v = vel_step(u, v, visc=0, dt=1)
-        grid = dense_step(grid, source, u, v, diff=0.00015, dt=1)
+        # u, v = vel_step(u, v, visc=0.1, dt=1)
+        grid = dense_step(grid, source, u, v, diff=0.0001, dt=1)
         draw_grid(grid, args.cell_size)
 
         # render fps counter on the screen

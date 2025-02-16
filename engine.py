@@ -1,8 +1,9 @@
-from typing import Tuple
+from typing import Tuple, Annotated, Literal
 import pygame as pg
 import numpy as np
+from numpy.typing import NDArray
 
-from utils import apply_kernel, generate_perlin_noise_2d
+from utils import generate_perlin_noise_2d
 
 
 def test_scenario_1(
@@ -16,7 +17,7 @@ def test_scenario_1(
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
-    v = np.ones_like(grid) / 25
+    v = np.ones_like(grid) / 20
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 
@@ -62,23 +63,23 @@ def test_scenario_3(
     return grid, source, u, v
 
 
-def clamp(low, high, val):
-    return max(low, min(high, val))
-
-
-def draw_grid(grid: np.ndarray, cell_width: int) -> None:
+def draw_grid(grid: Annotated[NDArray[np.int8], Literal[2]], cell_width: int) -> None:
     screen = pg.display.get_surface()
     grid_height, grid_width = grid.shape
+    grid = np.clip(grid, 0, 255)
+    alpha_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
 
     # keep in mind that the first and last rows and columns are boundaries, so they dont need to be drawn
     for y in range(1, grid_height - 1):
         for x in range(1, grid_width - 1):
-            c = clamp(0, 255, grid[y, x])
-            color = (c, c, c)
+            a = grid[y, x]
+            color = (124, 255, 109, a)
             cell = pg.Rect(
                 (x - 1) * cell_width, (y - 1) * cell_width, cell_width, cell_width
             )
-            pg.draw.rect(screen, color, cell)
+            pg.draw.rect(alpha_surface, color, cell)
+
+    screen.blit(alpha_surface, (0, 0))
 
 
 def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
@@ -170,7 +171,6 @@ def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     right_v = p[1:-1, 2:]
 
     div[1:-1, 1:-1] = -0.5 * h * (up_u - down_u + right_v - left_v)
-
 
     div = set_bound(div, 0)
     p = set_bound(p, 0)
