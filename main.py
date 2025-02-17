@@ -1,4 +1,5 @@
 import pygame as pg
+import numpy as np
 import tyro
 from dataclasses import dataclass
 from engine import draw_grid, dense_step, vel_step
@@ -21,13 +22,16 @@ def main(args):
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
     match args.test_scenario:
         case 1:
-            grid, source, u, v = engine.test_scenario_1(rows, cols)
+            grid, source, u_source, v_source = engine.test_scenario_1(rows, cols)
         case 2:
-            grid, source, u, v = engine.test_scenario_2(rows, cols)
+            grid, source, u_source, v_source = engine.test_scenario_2(rows, cols)
         case 3:
-            grid, source, u, v = engine.test_scenario_3(rows, cols)
+            grid, source, u_source, v_source = engine.test_scenario_3(rows, cols)
         case x:
             assert False, f"There is no test scenario with number {x}"
+
+    u = np.zeros_like(grid)
+    v = np.zeros_like(grid)
 
     screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
     background = pg.Surface(screen.get_size(), pg.SRCALPHA)
@@ -47,7 +51,7 @@ def main(args):
         screen.blit(background, (0, 0))
 
         ### Core logic
-        # u, v = vel_step(u, v, visc=0.1, dt=1)
+        u, v = vel_step(u, v, u_source, v_source, visc=0.1, dt=1)
         grid = dense_step(grid, source, u, v, diff=0.0001, dt=1)
         draw_grid(grid, args.cell_size)
 

@@ -17,7 +17,7 @@ def test_scenario_1(
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
-    v = np.ones_like(grid) / 20
+    v = np.ones_like(grid)
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 
@@ -54,9 +54,8 @@ def test_scenario_3(
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
-    print(grid.shape)
     noise = generate_perlin_noise_2d(grid.shape, res=(2, 2))
-    v = np.ones_like(grid) / 200 + noise / 30
+    v = np.ones_like(grid) / 2 + noise
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 
@@ -244,8 +243,15 @@ def dense_step(
 
 
 def vel_step(
-    u: np.ndarray, v: np.ndarray, visc: float, dt: float
+    u: np.ndarray,
+    v: np.ndarray,
+    u_source: np.ndarray,
+    v_source: np.ndarray,
+    visc: float,
+    dt: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    u = add_source(u, u_source, dt)
+    v = add_source(v, v_source, dt)
     u = diffuse(u, 1, visc, dt)
     v = diffuse(v, 2, visc, dt)
     u, v = project(u, v)
