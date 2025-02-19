@@ -3,7 +3,7 @@ import pygame as pg
 import numpy as np
 from numpy.typing import NDArray
 
-from utils import generate_perlin_noise_2d
+from utils import generate_perlin_noise_2d, hsl_to_rgb
 
 
 def test_scenario_1(
@@ -66,19 +66,16 @@ def draw_grid(grid: Annotated[NDArray[np.int8], Literal[2]], cell_width: int) ->
     screen = pg.display.get_surface()
     grid_height, grid_width = grid.shape
     grid = np.clip(grid, 0, 255)
-    alpha_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
 
     # keep in mind that the first and last rows and columns are boundaries, so they dont need to be drawn
     for y in range(1, grid_height - 1):
         for x in range(1, grid_width - 1):
-            a = grid[y, x]
-            color = (124, 255, 109, a)
+            l = (grid[y, x] / 255) * 100
+            color = hsl_to_rgb(180, 61, l)
             cell = pg.Rect(
                 (x - 1) * cell_width, (y - 1) * cell_width, cell_width, cell_width
             )
-            pg.draw.rect(alpha_surface, color, cell)
-
-    screen.blit(alpha_surface, (0, 0))
+            pg.draw.rect(screen, color, cell)
 
 
 def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:

@@ -34,8 +34,6 @@ def main(args):
     v = np.zeros_like(grid)
 
     screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
-    background = pg.Surface(screen.get_size(), pg.SRCALPHA)
-    background.fill((65, 120, 155, 80))
     pg.display.set_caption("Fluid simulation")
     font = pg.font.Font(None, 36)
 
@@ -47,8 +45,7 @@ def main(args):
             if event.type == pg.QUIT:
                 running = False
 
-        # screen.fill((109, 203, 225))
-        screen.blit(background, (0, 0))
+        screen.fill((6, 9, 10))
 
         ### Core logic
         u, v = vel_step(u, v, u_source, v_source, visc=0.1, dt=1)
@@ -59,6 +56,9 @@ def main(args):
         fps = int(clock.get_fps())
         fps_text = font.render(f"FPS {fps}", True, (255, 255, 255))
         screen.blit(fps_text, (10, 10))
+
+        # mouse_pos = pg.mouse.get_pos()
+        # pg.draw.circle(screen, (255, 0, 0), mouse_pos, 5)
 
         pg.display.flip()
         clock.tick(60)

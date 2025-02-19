@@ -1,6 +1,41 @@
 import numpy as np
 
 
+def hue_to_rgb(p, q, t):
+    if t < 0:
+        t += 1
+    if t > 1:
+        t -= 1
+    if t < 1 / 6:
+        return p + (q - p) * 6 * t
+    if t < 1 / 2:
+        return q
+    if t < 2 / 3:
+        return p + (q - p) * (2 / 3 - t) * 6
+    return p
+
+
+def unsigned_byte(x: float) -> int:
+    return min(max(int(x), 0), 255)
+
+
+def hsl_to_rgb(h, s, l):
+    h = h / 360.0
+    s = s / 100.0
+    l = l / 100.0
+
+    if s == 0:
+        r = g = b = l
+    else:
+        q = l * (1 + s) if l < 0.5 else l + s - l * s
+        p = 2 * l - q
+        r = hue_to_rgb(p, q, h + 1 / 3)
+        g = hue_to_rgb(p, q, h)
+        b = hue_to_rgb(p, q, h - 1 / 3)
+
+    return unsigned_byte(r * 255), unsigned_byte(g * 255), unsigned_byte(b * 255)
+
+
 def generate_perlin_noise_2d(shape, res):
     def f(t):
         return 6 * t**5 - 15 * t**4 + 10 * t**3
