@@ -2,8 +2,9 @@ import pygame as pg
 import numpy as np
 import tyro
 from dataclasses import dataclass
-from engine import draw_grid, dense_step, vel_step
+from engine import add_source, draw_grid, dense_step, vel_step
 import engine
+from utils import pos_to_index, circle_source
 
 
 @dataclass
@@ -41,6 +42,7 @@ def main(args):
     clock = pg.time.Clock()
 
     while running:
+        mouse_x, mouse_y = pg.mouse.get_pos()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -48,6 +50,16 @@ def main(args):
         screen.fill((6, 9, 10))
 
         ### Core logic
+        # UI input
+        buttons = pg.mouse.get_pressed()
+        if buttons[0]:  # left mouse button
+            mouse_j, mouse_i = pos_to_index(
+                mouse_x, mouse_y, args.cell_size, args.WIDTH, args.HEIGHT
+            )
+            ui_source = circle_source(grid, mouse_i, mouse_j, radius=5, weight=20)
+            grid = add_source(grid, ui_source, dt=1.0)
+
+        # diff equation solver
         u, v = vel_step(u, v, u_source, v_source, visc=0.1, dt=1)
         grid = dense_step(grid, source, u, v, diff=0.0001, dt=1)
         draw_grid(grid, args.cell_size)
@@ -57,8 +69,7 @@ def main(args):
         fps_text = font.render(f"FPS {fps}", True, (255, 255, 255))
         screen.blit(fps_text, (10, 10))
 
-        # mouse_pos = pg.mouse.get_pos()
-        # pg.draw.circle(screen, (255, 0, 0), mouse_pos, 5)
+        pg.draw.circle(screen, (255, 0, 0), (mouse_x, mouse_y), 5)
 
         pg.display.flip()
         clock.tick(60)

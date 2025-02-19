@@ -1,6 +1,33 @@
 import numpy as np
 
 
+def fill_circle(arr, i, j, R, val):
+    height, width = arr.shape
+    y, x = np.ogrid[:height, :width]
+    dist_from_center = np.sqrt((x - j) ** 2 + (y - i) ** 2)
+    mask = dist_from_center <= R
+    arr[mask] = val
+    return arr
+
+
+def circle_source(
+    grid: np.ndarray, mouse_i: int, mouse_j: int, radius: int = 5, weight: int = 20
+):
+    source = np.zeros_like(grid)
+    return fill_circle(source, mouse_i, mouse_j, radius, weight)
+
+
+def pos_to_index(pos_x, pos_y, cell_size, grid_width, grid_height):
+    i = pos_x // cell_size
+    j = pos_y // cell_size
+
+    # Ensure the indices are within the grid bounds
+    i = max(0, min(i, grid_width - 1))
+    j = max(0, min(j, grid_height - 1))
+
+    return i, j
+
+
 def hue_to_rgb(p, q, t):
     if t < 0:
         t += 1
