@@ -25,6 +25,8 @@ def main(args):
     # note, that grid has 2 extra rows and columns, these are the boundaries
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
     match args.test_scenario:
+        case 0:
+            grid, source, u_source, v_source = utils.test_scenario_0(rows, cols)
         case 1:
             grid, source, u_source, v_source = utils.test_scenario_1(rows, cols)
         case 2:
@@ -32,7 +34,7 @@ def main(args):
         case 3:
             grid, source, u_source, v_source = utils.test_scenario_3(rows, cols)
         case x:
-            assert False, f"There is no test scenario with number {x}"
+            raise TypeError(f"Test scenario {x} does not exist, available test scenarios: 0, 1, 2, 3")
 
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)

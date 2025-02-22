@@ -106,14 +106,23 @@ def generate_fractal_noise_2d(shape, res, octaves=1, persistence=0.5):
     return noise
 
 
+def test_scenario_0(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up an empty test scenario"""
+    grid = np.zeros(shape=(rows, cols))
+    u = np.zeros_like(grid)
+    v = np.zeros_like(grid)
+    source = np.zeros_like(grid)
+    return grid, source, u, v
+
 def test_scenario_1(
     rows: int, cols: int
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
     and there is only constant right directed, laminar wind.
 
-    Returns:
-        grid, source, u, v
+    :return grid, source, u, v
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
