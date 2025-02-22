@@ -6,62 +6,6 @@ from numpy.typing import NDArray
 from utils import generate_perlin_noise_2d, hsl_to_rgb
 
 
-def test_scenario_1(
-    rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
-    and there is only constant right directed, laminar wind.
-
-    Returns:
-        grid, source, u, v
-    """
-    grid = np.zeros(shape=(rows, cols))
-    u = np.zeros_like(grid)
-    v = np.ones_like(grid)
-    source = np.zeros_like(grid)
-    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
-
-    return grid, source, u, v
-
-
-def test_scenario_2(
-    rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Sets up a test scenario where there are three dot sources in the middle with no wind.
-
-    Returns:
-        grid, source, u, v
-    """
-    grid = np.zeros(shape=(rows, cols))
-    u = np.zeros_like(grid)
-    v = np.zeros_like(grid)
-    source = np.zeros_like(grid)
-    source[2 * rows // 3, cols // 2] = 200
-    source[rows // 2, cols // 3] = 200
-    source[rows // 2, 2 * cols // 3] = 200
-
-    return grid, source, u, v
-
-
-def test_scenario_3(
-    rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
-    and there is right facing wind with perlin noise.
-
-    Returns:
-        grid, source, u, v
-    """
-    grid = np.zeros(shape=(rows, cols))
-    u = np.zeros_like(grid)
-    noise = generate_perlin_noise_2d(grid.shape, res=(2, 2))
-    v = np.ones_like(grid) / 2 + noise
-    source = np.zeros_like(grid)
-    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
-
-    return grid, source, u, v
-
-
 def draw_grid(grid: Annotated[NDArray[np.int8], Literal[2]], cell_width: int) -> None:
     screen = pg.display.get_surface()
     grid_height, grid_width = grid.shape

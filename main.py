@@ -3,8 +3,11 @@ import numpy as np
 import tyro
 from dataclasses import dataclass
 from engine import add_source, draw_grid, dense_step, vel_step
-import engine
-from utils import pos_to_index, circle_source
+import utils
+from utils import (
+    pos_to_index,
+    circle_source,
+)
 
 
 @dataclass
@@ -23,11 +26,11 @@ def main(args):
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
     match args.test_scenario:
         case 1:
-            grid, source, u_source, v_source = engine.test_scenario_1(rows, cols)
+            grid, source, u_source, v_source = utils.test_scenario_1(rows, cols)
         case 2:
-            grid, source, u_source, v_source = engine.test_scenario_2(rows, cols)
+            grid, source, u_source, v_source = utils.test_scenario_2(rows, cols)
         case 3:
-            grid, source, u_source, v_source = engine.test_scenario_3(rows, cols)
+            grid, source, u_source, v_source = utils.test_scenario_3(rows, cols)
         case x:
             assert False, f"There is no test scenario with number {x}"
 
@@ -68,8 +71,6 @@ def main(args):
         fps = int(clock.get_fps())
         fps_text = font.render(f"FPS {fps}", True, (255, 255, 255))
         screen.blit(fps_text, (10, 10))
-
-        pg.draw.circle(screen, (255, 0, 0), (mouse_x, mouse_y), 5)
 
         pg.display.flip()
         clock.tick(60)
