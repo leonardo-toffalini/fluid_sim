@@ -22,7 +22,7 @@ conda env create -f environment.yaml
     Instead, pass around two pointers to two grids and only mutate one while we take values from the other, just like double buffer rendering.
 
 - Features:
-    - [ ] Add visualization for velocity field
+    - [x] Add visualization for velocity field
     - [ ] Implement a way to have solid objects in the scene
     - [ ] Add user input for moving solid objects in the scene
     - [ ] Create a nice looking title screen for the simulation

@@ -2,6 +2,7 @@ from typing import Tuple, Annotated, Literal
 import pygame as pg
 import numpy as np
 from numpy.typing import NDArray
+import matplotlib.pyplot as plt
 
 from utils import generate_perlin_noise_2d, hsl_to_rgb
 
@@ -20,6 +21,30 @@ def draw_grid(grid: Annotated[NDArray[np.int8], Literal[2]], cell_width: int) ->
                 (x - 1) * cell_width, (y - 1) * cell_width, cell_width, cell_width
             )
             pg.draw.rect(screen, color, cell)
+
+
+def draw_velocity_field(
+    u: Annotated[NDArray[np.int8], Literal[2]],
+    v: Annotated[NDArray[np.int8], Literal[2]],
+    cell_width: int,
+):
+    screen = pg.display.get_surface()
+    grid = u * u + v * v
+    grid_height, grid_width = grid.shape
+    cmap = plt.get_cmap("RdBu")
+
+    y, x = np.mgrid[1 : grid_height - 1, 1 : grid_width - 1]
+    vals = 10000 * grid[1:-1, 1:-1]
+    colors = cmap(vals)
+    colors_rgb = (colors[:, :, :3] * 255).astype(int)
+
+    for y in range(1, grid_height - 1):
+        for x in range(1, grid_width - 1):
+            c_rgb = tuple(colors_rgb[y - 1, x - 1])
+            cell = pg.Rect(
+                (x - 1) * cell_width, (y - 1) * cell_width, cell_width, cell_width
+            )
+            pg.draw.rect(screen, c_rgb, cell)
 
 
 def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:

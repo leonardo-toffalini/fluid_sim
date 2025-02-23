@@ -7,7 +7,7 @@ def fill_circle(arr, i, j, R, val):
     y, x = np.ogrid[:height, :width]
     dist_from_center = np.sqrt((x - j) ** 2 + (y - i) ** 2)
     mask = dist_from_center <= R
-    arr[mask] = val
+    arr[mask] = val * dist_from_center[mask]
     return arr
 
 
@@ -115,6 +115,7 @@ def test_scenario_0(
     v = np.zeros_like(grid)
     source = np.zeros_like(grid)
     return grid, source, u, v
+
 
 def test_scenario_1(
     rows: int, cols: int

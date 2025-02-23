@@ -2,7 +2,7 @@ import pygame as pg
 import numpy as np
 import tyro
 from dataclasses import dataclass
-from engine import add_source, draw_grid, dense_step, vel_step
+from engine import add_source, draw_grid, dense_step, draw_velocity_field, vel_step
 import utils
 from utils import (
     pos_to_index,
@@ -34,7 +34,9 @@ def main(args):
         case 3:
             grid, source, u_source, v_source = utils.test_scenario_3(rows, cols)
         case x:
-            raise TypeError(f"Test scenario {x} does not exist, available test scenarios: 0, 1, 2, 3")
+            raise TypeError(
+                f"Test scenario {x} does not exist, available test scenarios: 0, 1, 2, 3"
+            )
 
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
@@ -47,6 +49,8 @@ def main(args):
     clock = pg.time.Clock()
 
     while running:
+        fps = clock.get_fps()
+        dt = 1
         mouse_x, mouse_y = pg.mouse.get_pos()
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -61,13 +65,14 @@ def main(args):
             mouse_j, mouse_i = pos_to_index(
                 mouse_x, mouse_y, args.cell_size, args.WIDTH, args.HEIGHT
             )
-            ui_source = circle_source(grid, mouse_i, mouse_j, radius=5, weight=20)
-            grid = add_source(grid, ui_source, dt=1.0)
+            ui_source = circle_source(grid, mouse_i, mouse_j, radius=3, weight=12)
+            grid = add_source(grid, ui_source, dt=dt)
 
         # diff equation solver
-        u, v = vel_step(u, v, u_source, v_source, visc=0.1, dt=1)
-        grid = dense_step(grid, source, u, v, diff=0.0001, dt=1)
+        u, v = vel_step(u, v, u_source, v_source, visc=0.1, dt=dt)
+        grid = dense_step(grid, source, u, v, diff=0.0001, dt=dt)
         draw_grid(grid, args.cell_size)
+        # draw_velocity_field(u, v, args.cell_size)
 
         # render fps counter on the screen
         fps = int(clock.get_fps())
