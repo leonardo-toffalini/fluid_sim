@@ -24,19 +24,19 @@ def main(args):
     ### Setup
     # note, that grid has 2 extra rows and columns, these are the boundaries
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
-    match args.test_scenario:
-        case 0:
-            grid, source, u_source, v_source = utils.test_scenario_0(rows, cols)
-        case 1:
-            grid, source, u_source, v_source = utils.test_scenario_1(rows, cols)
-        case 2:
-            grid, source, u_source, v_source = utils.test_scenario_2(rows, cols)
-        case 3:
-            grid, source, u_source, v_source = utils.test_scenario_3(rows, cols)
-        case x:
-            raise TypeError(
-                f"Test scenario {x} does not exist, available test scenarios: 0, 1, 2, 3"
-            )
+
+    if args.test_scenario == 0:
+        grid, source, u_source, v_source = utils.test_scenario_0(rows, cols)
+    elif args.test_scenario == 1:
+        grid, source, u_source, v_source = utils.test_scenario_1(rows, cols)
+    elif args.test_scenario == 2:
+        grid, source, u_source, v_source = utils.test_scenario_2(rows, cols)
+    elif args.test_scenario == 3:
+        grid, source, u_source, v_source = utils.test_scenario_3(rows, cols)
+    else:
+        raise ValueError(
+            f"Test scenario {args.test_scenario} does not exist, available test scenarios: 0, 1, 2, 3"
+        )
 
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
