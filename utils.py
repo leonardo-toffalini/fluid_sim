@@ -61,7 +61,7 @@ def hsl_to_rgb(h, s, l):
         g = hue_to_rgb(p, q, h)
         b = hue_to_rgb(p, q, h - 1 / 3)
 
-    return unsigned_byte(r * 255), unsigned_byte(g * 255), unsigned_byte(b * 255)
+    return (unsigned_byte(r * 255) << 16) | (unsigned_byte(g * 255) << 8) | unsigned_byte(b * 255)
 
 
 def generate_perlin_noise_2d(shape, res):

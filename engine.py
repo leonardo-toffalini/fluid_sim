@@ -17,12 +17,12 @@ def draw_grid(grid: Annotated[NDArray[np.int8], Literal[2]], cell_width: int) ->
     screen = pg.display.get_surface()
     grid_height, grid_width = grid.shape
     np.clip(grid, 0, 255, out=grid)  # inplace
+    l = (grid / 255) * 1000
 
     # keep in mind that the first and last rows and columns are boundaries, so they dont need to be drawn
     for y in range(1, grid_height - 1):
         for x in range(1, grid_width - 1):
-            l = (grid[y, x] / 255) * 1000
-            color = hsl_to_rgb_table[int(l)]  # TODO: consider proper rounding
+            color = hsl_to_rgb_table[int(l[y, x])]  # TODO: consider proper rounding
             cell = pg.Rect(
                 (x - 1) * cell_width, (y - 1) * cell_width, cell_width, cell_width
             )
