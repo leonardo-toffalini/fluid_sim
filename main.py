@@ -1,5 +1,6 @@
 import pygame as pg
 import numpy as np
+import time
 import tyro
 from dataclasses import dataclass
 from engine import add_source, draw_grid, dense_step, draw_velocity_field, vel_step
@@ -18,6 +19,7 @@ class Args:
     cell_size: int = 10
     diff: float = 0.0001
     visc: float = 0.1
+    debug_print: bool = False
 
 
 def main(args):
@@ -51,7 +53,7 @@ def main(args):
     clock = pg.time.Clock()
 
     while running:
-        fps = clock.get_fps()
+        t0 = time.perf_counter()
         dt = 1  # delta time should not be hardcoded
         mouse_x, mouse_y = pg.mouse.get_pos()
         for event in pg.event.get():
@@ -71,15 +73,29 @@ def main(args):
             grid = add_source(grid, ui_source, dt=dt)
 
         # diff equation solver
+        t1 = time.perf_counter()
         u, v = vel_step(u, v, u_source, v_source, visc=args.visc, dt=dt)
+        t2 = time.perf_counter()
         grid = dense_step(grid, source, u, v, diff=args.diff, dt=dt)
+        t3 = time.perf_counter()
         draw_grid(grid, args.cell_size)
         # draw_velocity_field(u, v, args.cell_size)
 
+        t4 = time.perf_counter()
         # render fps counter on the screen
         fps = int(clock.get_fps())
         fps_text = font.render(f"FPS {fps}", True, (255, 255, 255))
         screen.blit(fps_text, (10, 10))
+
+        if args.debug_print:
+            def print_time(text, time, row):
+                handle_text = font.render(f"{text}: {(time) * 1e3:.2f}ms", True, (255, 255, 255))
+                screen.blit(handle_text, (10, 10 + row * 20))
+
+            print_time("UI handle time",  t1 - t0, 1)
+            print_time("vel_step time",   t2 - t1, 2)
+            print_time("dense_step time", t3 - t2, 3)
+            print_time("render time",     t4 - t3, 4)
 
         pg.display.flip()
         clock.tick(60)
