@@ -52,21 +52,8 @@ def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
     assert grid.shape == source.shape
 
     grid_copy = np.copy(grid)  # we copy the original grid to not mutate it
-    grid_copy = grid_copy + dt * source
+    grid_copy = grid + dt * source
     return grid_copy
-
-
-def diffuse_bad(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
-    """Returns a new modified grid, where each cell's value is diffused. This method can be unstable."""
-    new_grid = np.zeros_like(grid)
-    rows, cols = grid.shape
-    a = dt * diff * rows * cols
-    kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
-
-    new_grid[1:-1, 1:-1] = grid[1:-1, 1:-1] + a * apply_kernel(grid[1:-1, 1:-1], kernel)
-
-    new_grid = set_bound(new_grid, b)
-    return new_grid
 
 
 def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:

@@ -16,6 +16,8 @@ class Args:
     HEIGHT: int = 600
     test_scenario: int = 1
     cell_size: int = 10
+    diff: float = 0.0001
+    visc: float = 0.1
 
 
 def main(args):
@@ -50,7 +52,7 @@ def main(args):
 
     while running:
         fps = clock.get_fps()
-        dt = 1
+        dt = 1  # delta time should not be hardcoded
         mouse_x, mouse_y = pg.mouse.get_pos()
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -69,8 +71,8 @@ def main(args):
             grid = add_source(grid, ui_source, dt=dt)
 
         # diff equation solver
-        u, v = vel_step(u, v, u_source, v_source, visc=0.1, dt=dt)
-        grid = dense_step(grid, source, u, v, diff=0.0001, dt=dt)
+        u, v = vel_step(u, v, u_source, v_source, visc=args.visc, dt=dt)
+        grid = dense_step(grid, source, u, v, diff=args.diff, dt=dt)
         draw_grid(grid, args.cell_size)
         # draw_velocity_field(u, v, args.cell_size)
 
