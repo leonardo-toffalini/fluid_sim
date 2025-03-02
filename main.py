@@ -3,7 +3,7 @@ import numpy as np
 import time
 import tyro
 from dataclasses import dataclass
-from engine import add_source, draw_grid, dense_step, draw_velocity_field, vel_step
+from engine import add_source, GridDrawer, dense_step, draw_velocity_field, vel_step
 import utils
 from utils import (
     pos_to_index,
@@ -48,6 +48,7 @@ def main(args):
     screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
     pg.display.set_caption("Fluid simulation")
     font = pg.font.Font(None, 36)
+    grid_drawer = GridDrawer(rows, cols, args.cell_size)
 
     running = True
     clock = pg.time.Clock()
@@ -78,7 +79,7 @@ def main(args):
         t2 = time.perf_counter()
         grid = dense_step(grid, source, u, v, diff=args.diff, dt=dt)
         t3 = time.perf_counter()
-        draw_grid(grid, args.cell_size)
+        grid_drawer.draw_grid(grid)
         # draw_velocity_field(u, v, args.cell_size)
 
         t4 = time.perf_counter()
@@ -98,7 +99,7 @@ def main(args):
             print_time("render time",     t4 - t3, 4)
 
         pg.display.flip()
-        clock.tick(60)
+        clock.tick(120)
 
     pg.quit()
 
