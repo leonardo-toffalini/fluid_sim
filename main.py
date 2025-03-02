@@ -3,7 +3,7 @@ import numpy as np
 import time
 import tyro
 from dataclasses import dataclass
-from engine import add_source, GridDrawer, dense_step, draw_velocity_field, vel_step
+from engine import add_source, GridDrawer, dense_step, vel_step
 import utils
 from utils import (
     pos_to_index,
@@ -20,6 +20,7 @@ class Args:
     diff: float = 0.0001
     visc: float = 0.1
     debug_print: bool = False
+    vis_type: str = "dens"
 
 
 def main(args):
@@ -29,18 +30,7 @@ def main(args):
     # note, that grid has 2 extra rows and columns, these are the boundaries
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
 
-    if args.test_scenario == 0:
-        grid, source, u_source, v_source = utils.test_scenario_0(rows, cols)
-    elif args.test_scenario == 1:
-        grid, source, u_source, v_source = utils.test_scenario_1(rows, cols)
-    elif args.test_scenario == 2:
-        grid, source, u_source, v_source = utils.test_scenario_2(rows, cols)
-    elif args.test_scenario == 3:
-        grid, source, u_source, v_source = utils.test_scenario_3(rows, cols)
-    else:
-        raise ValueError(
-            f"Test scenario {args.test_scenario} does not exist, available test scenarios: 0, 1, 2, 3"
-        )
+    grid, source, u_source, v_source = utils.get_test_scenario(args.test_scenario, rows, cols)
 
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
@@ -79,27 +69,32 @@ def main(args):
         t2 = time.perf_counter()
         grid = dense_step(grid, source, u, v, diff=args.diff, dt=dt)
         t3 = time.perf_counter()
-        grid_drawer.draw_grid(grid)
-        # draw_velocity_field(u, v, args.cell_size)
+        if args.vis_type == "dens":
+            grid_drawer.draw_grid(grid)
+        elif args.vis_type == "vel":
+            grid_drawer.draw_velocity_field(u, v)
 
         t4 = time.perf_counter()
         # render fps counter on the screen
         fps = int(clock.get_fps())
-        fps_text = font.render(f"FPS {fps}", True, (255, 255, 255))
+        fps_text = font.render(f"FPS {fps}", True, (255, 255, 255), (0, 0, 0))
         screen.blit(fps_text, (10, 10))
 
         if args.debug_print:
+
             def print_time(text, time, row):
-                handle_text = font.render(f"{text}: {(time) * 1e3:.2f}ms", True, (255, 255, 255))
+                handle_text = font.render(
+                    f"{text}: {(time) * 1e3:.2f}ms", True, (255, 255, 255), (0, 0, 0)
+                )
                 screen.blit(handle_text, (10, 10 + row * 20))
 
-            print_time("UI handle time",  t1 - t0, 1)
-            print_time("vel_step time",   t2 - t1, 2)
+            print_time("UI handle time", t1 - t0, 1)
+            print_time("vel_step time", t2 - t1, 2)
             print_time("dense_step time", t3 - t2, 3)
-            print_time("render time",     t4 - t3, 4)
+            print_time("render time", t4 - t3, 4)
 
         pg.display.flip()
-        clock.tick(120)
+        clock.tick(600)
 
     pg.quit()
 

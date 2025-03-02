@@ -7,7 +7,7 @@ def fill_circle(arr, i, j, R, val):
     y, x = np.ogrid[:height, :width]
     dist_from_center = np.sqrt((x - j) ** 2 + (y - i) ** 2)
     mask = dist_from_center <= R
-    arr[mask] = val * dist_from_center[mask]
+    arr[mask] = val * (R - dist_from_center[mask])
     return arr
 
 
@@ -61,7 +61,11 @@ def hsl_to_rgb(h, s, l):
         g = hue_to_rgb(p, q, h)
         b = hue_to_rgb(p, q, h - 1 / 3)
 
-    return (unsigned_byte(r * 255) << 16) | (unsigned_byte(g * 255) << 8) | unsigned_byte(b * 255)
+    return (
+        (unsigned_byte(r * 255) << 16)
+        | (unsigned_byte(g * 255) << 8)
+        | unsigned_byte(b * 255)
+    )
 
 
 def generate_perlin_noise_2d(shape, res):
@@ -104,6 +108,21 @@ def generate_fractal_noise_2d(shape, res, octaves=1, persistence=0.5):
         frequency *= 2
         amplitude *= persistence
     return noise
+
+
+def get_test_scenario(scenario_id: int, rows: int, cols: int):
+    if scenario_id == 0:
+        return test_scenario_0(rows, cols)
+    elif scenario_id == 1:
+        return test_scenario_1(rows, cols)
+    elif scenario_id == 2:
+        return test_scenario_2(rows, cols)
+    elif scenario_id == 3:
+        return test_scenario_3(rows, cols)
+    else:
+        raise ValueError(
+            f"Test scenario {scenario_id} does not exist, available test scenarios: 0, 1, 2, 3"
+        )
 
 
 def test_scenario_0(
