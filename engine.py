@@ -52,7 +52,7 @@ def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
     assert grid.shape == source.shape
 
     grid_copy = np.copy(grid)  # we copy the original grid to not mutate it
-    grid_copy = grid + dt * source
+    grid_copy = grid_copy + dt * source
     return grid_copy
 
 
