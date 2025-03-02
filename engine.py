@@ -138,10 +138,10 @@ def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     rows, cols = div.shape
     h = 1.0 / max(rows, cols)
 
-    up_u = p[:-2, 1:-1]
-    down_u = p[2:, 1:-1]
-    left_v = p[1:-1, :-2]
-    right_v = p[1:-1, 2:]
+    up_u = u[:-2, 1:-1]
+    down_u = u[2:, 1:-1]
+    left_v = v[1:-1, :-2]
+    right_v = v[1:-1, 2:]
 
     div[1:-1, 1:-1] = -0.5 * h * (up_u - down_u + right_v - left_v)
 
