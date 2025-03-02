@@ -7,16 +7,22 @@ import matplotlib.pyplot as plt
 from utils import generate_perlin_noise_2d, hsl_to_rgb
 
 
+"""
+Precomputed hsl -> rgb table with precision of 0.1
+"""
+hsl_to_rgb_table = [hsl_to_rgb(180, 61, l / 10) for l in range(1001)]
+
+
 def draw_grid(grid: Annotated[NDArray[np.int8], Literal[2]], cell_width: int) -> None:
     screen = pg.display.get_surface()
     grid_height, grid_width = grid.shape
-    grid = np.clip(grid, 0, 255)
+    np.clip(grid, 0, 255, out=grid)  # inplace
 
     # keep in mind that the first and last rows and columns are boundaries, so they dont need to be drawn
     for y in range(1, grid_height - 1):
         for x in range(1, grid_width - 1):
-            l = (grid[y, x] / 255) * 100
-            color = hsl_to_rgb(180, 61, l)
+            l = (grid[y, x] / 255) * 1000
+            color = hsl_to_rgb_table[int(l)]  # TODO: consider proper rounding
             cell = pg.Rect(
                 (x - 1) * cell_width, (y - 1) * cell_width, cell_width, cell_width
             )
