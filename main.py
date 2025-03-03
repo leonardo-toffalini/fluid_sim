@@ -1,4 +1,5 @@
 import pygame as pg
+import pygame.freetype
 import numpy as np
 import time
 import tyro
@@ -24,7 +25,7 @@ class Args:
 
 
 def main(args):
-    pg.init()
+    pygame.freetype.init()
 
     ### Setup
     # note, that grid has 2 extra rows and columns, these are the boundaries
@@ -37,7 +38,7 @@ def main(args):
 
     screen = pg.display.set_mode((args.WIDTH, args.HEIGHT))
     pg.display.set_caption("Fluid simulation")
-    font = pg.font.Font(None, 36)
+    font = pygame.freetype.SysFont("monospace", 26)
     grid_drawer = GridDrawer(rows, cols, args.cell_size)
 
     running = True
@@ -77,16 +78,12 @@ def main(args):
         t4 = time.perf_counter()
         # render fps counter on the screen
         fps = int(clock.get_fps())
-        fps_text = font.render(f"FPS {fps}", True, (255, 255, 255), (0, 0, 0))
-        screen.blit(fps_text, (10, 10))
+        font.render_to(screen, (10, 10), f"FPS {fps}", (255, 255, 255))
 
         if args.debug_print:
 
             def print_time(text, time, row):
-                handle_text = font.render(
-                    f"{text}: {(time) * 1e3:.2f}ms", True, (255, 255, 255), (0, 0, 0)
-                )
-                screen.blit(handle_text, (10, 10 + row * 20))
+                font.render_to(screen, (10, 10 + row * 30), f"{text}: {(time) * 1e3:.2f}ms", (255, 255, 255))
 
             print_time("UI handle time", t1 - t0, 1)
             print_time("vel_step time", t2 - t1, 2)
