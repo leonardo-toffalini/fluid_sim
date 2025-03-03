@@ -190,6 +190,35 @@ def set_bound(grid: np.ndarray, b: int) -> np.ndarray:
     new_grid[:, 0] = -grid[:, 1] if b == 2 else grid[:, 1]
     new_grid[:, cols - 1] = -grid[:, cols - 2] if b == 2 else grid[:, cols - 2]
 
+    r_mid = rows // 2
+    c_mid = cols // 2 - 10
+    box_top = r_mid - 2
+    box_bot = r_mid + 2
+    box_left = c_mid - 2
+    box_right = c_mid + 2
+    new_grid[box_top, box_left:box_right] = (
+        -grid[box_top + 1, box_left:box_right]
+        if b == 1
+        else grid[box_top + 1, box_left:box_right]
+    )
+
+    new_grid[box_bot - 1, box_left:box_right] = (
+        -grid[box_bot - 2, box_left:box_right]
+        if b == 1
+        else grid[box_bot - 2, box_left:box_right]
+    )
+
+    new_grid[box_top:box_bot, box_left] = (
+        -grid[box_top:box_bot, box_left + 1]
+        if b == 2
+        else grid[box_top:box_bot, box_left + 1]
+    )
+    new_grid[box_top:box_bot, box_right - 1] = (
+        -grid[box_top:box_bot, box_right - 2]
+        if b == 2
+        else grid[box_top:box_bot, box_right - 2]
+    )
+
     new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
     new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
     new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[rows - 1, 1])
