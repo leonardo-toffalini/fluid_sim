@@ -68,13 +68,10 @@ class GridDrawer:
                 pg.draw.rect(self.screen, c_rgb, self.cells[y, x])
 
 
-def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> np.ndarray:
+def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> None:
     """Returns a new modified grid, where the sources are added to each corresponding cells"""
     assert grid.shape == source.shape
-
-    grid_copy = np.copy(grid)  # we copy the original grid to not mutate it
-    grid_copy = grid + dt * source
-    return grid_copy
+    grid += dt * source
 
 
 def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
@@ -83,17 +80,17 @@ def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
     rows, cols = grid.shape
     a = dt * diff * rows * cols
 
-    for _ in range(20):
-        up = new_grid[:-2, 1:-1]
-        down = new_grid[2:, 1:-1]
-        left = new_grid[1:-1, :-2]
-        right = new_grid[1:-1, 2:]
+    up = new_grid[:-2, 1:-1]
+    down = new_grid[2:, 1:-1]
+    left = new_grid[1:-1, :-2]
+    right = new_grid[1:-1, 2:]
 
+    for _ in range(20):
         new_grid[1:-1, 1:-1] = (grid[1:-1, 1:-1] + a * (up + down + left + right)) / (
             1 + 4 * a
         )
 
-    new_grid = set_bound(new_grid, b)
+    set_bound(new_grid, b)
     return new_grid
 
 
@@ -128,7 +125,7 @@ def advect(
         t0 * grid[i1, j0] + t1 * grid[i1, j1]
     )
 
-    new_grid = set_bound(new_grid, b)
+    set_bound(new_grid, b)
     return new_grid
 
 
@@ -145,29 +142,24 @@ def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
     div[1:-1, 1:-1] = -0.5 * h * (up_u - down_u + right_v - left_v)
 
-    div = set_bound(div, 0)
-    p = set_bound(p, 0)
-
-    for _ in range(20):
-        up = p[:-2, 1:-1]
-        down = p[2:, 1:-1]
-        left = p[1:-1, :-2]
-        right = p[1:-1, 2:]
-
-        p[1:-1, 1:-1] = (div[1:-1, 1:-1] + up + down + left + right) / 4
-
-        p = set_bound(p, 0)
+    set_bound(div, 0)
+    set_bound(p, 0)
 
     up = p[:-2, 1:-1]
     down = p[2:, 1:-1]
     left = p[1:-1, :-2]
     right = p[1:-1, 2:]
 
+    for _ in range(20):
+        p[1:-1, 1:-1] = (div[1:-1, 1:-1] + up + down + left + right) / 4
+
+        set_bound(p, 0)
+
     u[1:-1, 1:-1] = u[1:-1, 1:-1] - 0.5 * (up - down) / h
     v[1:-1, 1:-1] = v[1:-1, 1:-1] - 0.5 * (right - left) / h
 
-    u = set_bound(u, 1)
-    v = set_bound(v, 2)
+    set_bound(u, 1)
+    set_bound(v, 2)
     return u, v
 
 
@@ -182,25 +174,22 @@ def set_bound_bad(grid: np.ndarray) -> np.ndarray:
     return new_grid
 
 
-def set_bound(grid: np.ndarray, b: int, test_body: str = "box") -> np.ndarray:
-    new_grid = np.copy(grid)
+def set_bound(grid: np.ndarray, b: int, test_body: str = "box") -> None:
     rows, cols = grid.shape
-    new_grid[0, :] = -grid[1, :] if b == 1 else grid[1, :]
-    new_grid[rows - 1, :] = -grid[rows - 2, :] if b == 1 else grid[rows - 2, :]
-    new_grid[:, 0] = -grid[:, 1] if b == 2 else grid[:, 1]
-    new_grid[:, cols - 1] = -grid[:, cols - 2] if b == 2 else grid[:, cols - 2]
+    grid[0, :] = -grid[1, :] if b == 1 else grid[1, :]
+    grid[rows - 1, :] = -grid[rows - 2, :] if b == 1 else grid[rows - 2, :]
+    grid[:, 0] = -grid[:, 1] if b == 2 else grid[:, 1]
+    grid[:, cols - 1] = -grid[:, cols - 2] if b == 2 else grid[:, cols - 2]
 
     if test_body == "box":
-        new_grid = set_box_bound(new_grid, b, ((rows // 2) - 2, (cols // 2) - 10), 4, 4)
+        set_box_bound(grid, b, ((rows // 2) - 2, (cols // 2) - 10), 4, 4)
 
-    new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
-    new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
-    new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[rows - 1, 1])
-    new_grid[rows - 1, cols - 1] = 0.5 * (
+    grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
+    grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
+    grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[rows - 1, 1])
+    grid[rows - 1, cols - 1] = 0.5 * (
         grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
     )
-
-    return new_grid
 
 
 def set_box_bound(
@@ -209,37 +198,34 @@ def set_box_bound(
     pos: Tuple[int, int],
     width: int,
     height: int,
-) -> np.ndarray:
-    new_grid = grid.copy()
+) -> None:
     box_top = pos[0]
     box_bot = pos[0] + height
     box_left = pos[1]
     box_right = pos[1] + width
 
-    new_grid[box_top, box_left:box_right] = (
+    grid[box_top, box_left:box_right] = (
         -grid[box_top + 1, box_left:box_right]
         if b == 1
         else grid[box_top + 1, box_left:box_right]
     )
 
-    new_grid[box_bot - 1, box_left:box_right] = (
+    grid[box_bot - 1, box_left:box_right] = (
         -grid[box_bot - 2, box_left:box_right]
         if b == 1
         else grid[box_bot - 2, box_left:box_right]
     )
 
-    new_grid[box_top:box_bot, box_left] = (
+    grid[box_top:box_bot, box_left] = (
         -grid[box_top:box_bot, box_left + 1]
         if b == 2
         else grid[box_top:box_bot, box_left + 1]
     )
-    new_grid[box_top:box_bot, box_right - 1] = (
+    grid[box_top:box_bot, box_right - 1] = (
         -grid[box_top:box_bot, box_right - 2]
         if b == 2
         else grid[box_top:box_bot, box_right - 2]
     )
-
-    return new_grid
 
 
 def dense_step(
@@ -252,7 +238,7 @@ def dense_step(
 ) -> np.ndarray:
     """Simulates on step for the density simulation. Returns a new modified grid.
     add sources, diffusion, advection"""
-    grid = add_source(grid, source, dt)
+    add_source(grid, source, dt)
     grid = diffuse(grid, 0, diff, dt)
     grid = advect(grid, 0, u, v, dt)
     return grid
@@ -266,8 +252,8 @@ def vel_step(
     visc: float,
     dt: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    u = add_source(u, u_source, dt)
-    v = add_source(v, v_source, dt)
+    add_source(u, u_source, dt)
+    add_source(v, v_source, dt)
     u = diffuse(u, 1, visc, dt)
     v = diffuse(v, 2, visc, dt)
     u, v = project(u, v)
