@@ -62,7 +62,7 @@ def main(args):
                 mouse_x, mouse_y, args.cell_size, args.WIDTH, args.HEIGHT
             )
             ui_source = circle_source(grid, mouse_i, mouse_j, radius=3, weight=12)
-            grid = add_source(grid, ui_source, dt=dt)
+            add_source(grid, ui_source, dt=dt)
 
         # diff equation solver
         t1 = time.perf_counter()
