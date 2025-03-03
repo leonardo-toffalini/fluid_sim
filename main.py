@@ -81,9 +81,10 @@ def main(args):
         font.render_to(screen, (10, 10), f"FPS {fps}", (255, 255, 255))
 
         if args.debug_print:
-
-            def print_time(text, time, row):
-                font.render_to(screen, (10, 10 + row * 30), f"{text}: {(time) * 1e3:.2f}ms", (255, 255, 255))
+            def print_time(text, time, row, tab=15):
+                font.render_to(screen, (10, 10 + row * 30),
+                               f"{text}:{' '* (tab - len(text))}{time * 1e3:5.2f}ms",
+                               (255, 255, 255))
 
             print_time("UI handle time", t1 - t0, 1)
             print_time("vel_step time", t2 - t1, 2)
