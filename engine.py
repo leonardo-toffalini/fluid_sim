@@ -182,7 +182,7 @@ def set_bound_bad(grid: np.ndarray) -> np.ndarray:
     return new_grid
 
 
-def set_bound(grid: np.ndarray, b: int) -> np.ndarray:
+def set_bound(grid: np.ndarray, b: int, test_body: str = "box") -> np.ndarray:
     new_grid = np.copy(grid)
     rows, cols = grid.shape
     new_grid[0, :] = -grid[1, :] if b == 1 else grid[1, :]
@@ -190,12 +190,32 @@ def set_bound(grid: np.ndarray, b: int) -> np.ndarray:
     new_grid[:, 0] = -grid[:, 1] if b == 2 else grid[:, 1]
     new_grid[:, cols - 1] = -grid[:, cols - 2] if b == 2 else grid[:, cols - 2]
 
-    r_mid = rows // 2
-    c_mid = cols // 2 - 10
-    box_top = r_mid - 2
-    box_bot = r_mid + 2
-    box_left = c_mid - 2
-    box_right = c_mid + 2
+    if test_body == "box":
+        new_grid = set_box_bound(new_grid, b, ((rows // 2) - 2, (cols // 2) - 10), 4, 4)
+
+    new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
+    new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
+    new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[rows - 1, 1])
+    new_grid[rows - 1, cols - 1] = 0.5 * (
+        grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
+    )
+
+    return new_grid
+
+
+def set_box_bound(
+    grid: np.ndarray,
+    b: int,
+    pos: Tuple[int, int],
+    width: int,
+    height: int,
+) -> np.ndarray:
+    new_grid = grid.copy()
+    box_top = pos[0]
+    box_bot = pos[0] + height
+    box_left = pos[1]
+    box_right = pos[1] + width
+
     new_grid[box_top, box_left:box_right] = (
         -grid[box_top + 1, box_left:box_right]
         if b == 1
@@ -217,13 +237,6 @@ def set_bound(grid: np.ndarray, b: int) -> np.ndarray:
         -grid[box_top:box_bot, box_right - 2]
         if b == 2
         else grid[box_top:box_bot, box_right - 2]
-    )
-
-    new_grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
-    new_grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
-    new_grid[rows - 1, 0] = 0.5 * (grid[rows - 2, 0] + grid[rows - 1, 1])
-    new_grid[rows - 1, cols - 1] = 0.5 * (
-        grid[rows - 2, cols - 1] + grid[rows - 1, cols - 2]
     )
 
     return new_grid
