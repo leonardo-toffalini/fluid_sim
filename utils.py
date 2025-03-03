@@ -48,6 +48,7 @@ def unsigned_byte(x: float) -> int:
 
 
 def hsl_to_rgb(h, s, l):
+    """Returns an integer where the last 3 * 8 bits are the red, green, and blue channels"""
     h = h / 360.0
     s = s / 100.0
     l = l / 100.0
@@ -146,9 +147,10 @@ def test_scenario_1(
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
-    v = np.ones_like(grid)
+    v = np.zeros_like(grid)
+    v[:, 1] = 0.5
     source = np.zeros_like(grid)
-    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
+    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 150
 
     return grid, source, u, v
 
@@ -184,7 +186,9 @@ def test_scenario_3(
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
     noise = generate_perlin_noise_2d(grid.shape, res=(2, 2))
-    v = np.ones_like(grid) / 2 + noise
+    v = np.zeros_like(grid)
+    v[:, 1] = 0.5
+    v += noise / 200
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
 

@@ -18,8 +18,8 @@ class Args:
     HEIGHT: int = 600
     test_scenario: int = 1
     cell_size: int = 10
-    diff: float = 0.0001
-    visc: float = 0.1
+    diff: float = 1e-6
+    visc: float = 1e-4
     debug_print: bool = False
     vis_type: str = "dens"
 
@@ -91,7 +91,7 @@ def main(args):
             print_time("render time", t4 - t3, 4)
 
         pg.display.flip()
-        clock.tick(600)
+        clock.tick(120)
 
     pg.quit()
 
