@@ -4,7 +4,7 @@ import numpy as np
 import time
 import tyro
 from dataclasses import dataclass
-from engine import add_source, GridDrawer, dense_step, vel_step
+from engine import add_source, GridDrawer, dense_step, vel_step, Boundary, BoundaryOld
 import utils
 from utils import (
     pos_to_index,
@@ -31,7 +31,7 @@ def main(args):
     # note, that grid has 2 extra rows and columns, these are the boundaries
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
 
-    grid, source, u_source, v_source = utils.get_test_scenario(args.test_scenario, rows, cols)
+    grid, source, u_source, v_source, solids = utils.get_test_scenario(args.test_scenario, rows, cols)
 
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
@@ -40,6 +40,7 @@ def main(args):
     pg.display.set_caption("Fluid simulation")
     font = pygame.freetype.SysFont("monospace", 26)
     grid_drawer = GridDrawer(rows, cols, args.cell_size)
+    boundary = Boundary(solids)
 
     running = True
     clock = pg.time.Clock()
@@ -66,9 +67,9 @@ def main(args):
 
         # diff equation solver
         t1 = time.perf_counter()
-        u, v = vel_step(u, v, u_source, v_source, visc=args.visc, dt=dt)
+        u, v = vel_step(u, v, u_source, v_source, boundary, visc=args.visc, dt=dt)
         t2 = time.perf_counter()
-        grid = dense_step(grid, source, u, v, diff=args.diff, dt=dt)
+        grid = dense_step(grid, source, u, v, boundary, diff=args.diff, dt=dt)
         t3 = time.perf_counter()
         if args.vis_type == "dens":
             grid_drawer.draw_grid(grid)
