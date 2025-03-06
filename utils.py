@@ -2,12 +2,15 @@ import numpy as np
 from typing import Tuple
 
 
-def fill_circle(arr, i, j, R, val):
+def fill_circle(arr, i, j, R, val, fade=True):
     height, width = arr.shape
     y, x = np.ogrid[:height, :width]
     dist_from_center = np.sqrt((x - j) ** 2 + (y - i) ** 2)
     mask = dist_from_center <= R
-    arr[mask] = val * (R - dist_from_center[mask])
+    if fade:
+        arr[mask] = val * (R - dist_from_center[mask])
+    else:
+        arr[mask] = val
     return arr
 
 
@@ -195,7 +198,7 @@ def test_scenario_3(
     v[:, 1] = 0.5
     v += noise / 200
     source = np.zeros_like(grid)
-    source[(rows // 2) - 3: (rows // 2) + 3, 1] = 200
+    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
     solids = make_solid_box(source.shape)
 
     return grid, source, u, v, solids

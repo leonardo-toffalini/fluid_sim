@@ -90,17 +90,15 @@ class BoundaryOld:
 class Boundary:
     def __init__(self, bound: np.ndarray):
         self.bound = bound
-        self.mask = (bound != 0)
+        self.mask = bound != 0
 
         zero_mask = 1 - self.bound  # assumes that all elems either 0 or 1
-        padded = np.pad(zero_mask, pad_width=1,
-                        mode='constant', constant_values=0)
+        padded = np.pad(zero_mask, pad_width=1, mode="constant", constant_values=0)
 
         # TODO: consider 8-neighbour solution
-        cnt = (padded[:-2, 1:-1] +
-               padded[1:-1, :-2] +
-               padded[1:-1, 2:] +
-               padded[2:, 1:-1])
+        cnt = (
+            padded[:-2, 1:-1] + padded[1:-1, :-2] + padded[1:-1, 2:] + padded[2:, 1:-1]
+        )
 
         # TODO: Handle elements with only solid neighbours
         cnt[cnt != 0] = 1 / cnt[cnt != 0]
@@ -119,17 +117,18 @@ class Boundary:
             m_v = -1
 
         values_in_solids = (
-                m_h * Boundary.shift(grid * self.left, Dir.RIGHT) +
-                m_h * Boundary.shift(grid * self.right, Dir.LEFT) +
-                m_v * Boundary.shift(grid * self.up, Dir.DOWN) +
-                m_v * Boundary.shift(grid * self.down, Dir.UP))
+            m_h * Boundary.shift(grid * self.left, Dir.RIGHT)
+            + m_h * Boundary.shift(grid * self.right, Dir.LEFT)
+            + m_v * Boundary.shift(grid * self.up, Dir.DOWN)
+            + m_v * Boundary.shift(grid * self.down, Dir.UP)
+        )
 
         grid[self.mask] = values_in_solids[self.mask]
 
     @staticmethod
     def shift_and_mask(arr: np.ndarray, dir: Dir) -> np.ndarray:
         shifted = Boundary.shift(arr, dir)
-        mask = (arr == 0)
+        mask = arr == 0
         shifted *= mask
         return shifted
 
@@ -348,9 +347,9 @@ def vel_step(
 
 if __name__ == "__main__":
     m = np.zeros((10, 10))
-    #m[4:8, 5:7] = 1
-    #m[4, 4] = 1
-    m[0,:] = 1
+    # m[4:8, 5:7] = 1
+    # m[4, 4] = 1
+    m[0, :] = 1
     m[:, 0] = 1
 
     b = Boundary(m)
@@ -365,7 +364,7 @@ if __name__ == "__main__":
     print(b.down)
 
     moc = np.arange(100).reshape(m.shape)
-    #asd = np.zeros_like(m)
+    # asd = np.zeros_like(m)
     print(moc)
     b.apply(moc, Flow.VERTICAL)
     print(moc)

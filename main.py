@@ -31,7 +31,9 @@ def main(args):
     # note, that grid has 2 extra rows and columns, these are the boundaries
     rows, cols = 2 + args.HEIGHT // args.cell_size, 2 + args.WIDTH // args.cell_size
 
-    grid, source, u_source, v_source, solids = utils.get_test_scenario(args.test_scenario, rows, cols)
+    grid, source, u_source, v_source, solids = utils.get_test_scenario(
+        args.test_scenario, rows, cols
+    )
 
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
@@ -82,10 +84,14 @@ def main(args):
         font.render_to(screen, (10, 10), f"FPS {fps}", (255, 255, 255))
 
         if args.debug_print:
+
             def print_time(text, time, row, tab=15):
-                font.render_to(screen, (10, 10 + row * 30),
-                               f"{text}:{' '* (tab - len(text))}{time * 1e3:5.2f}ms",
-                               (255, 255, 255))
+                font.render_to(
+                    screen,
+                    (10, 10 + row * 30),
+                    f"{text}:{' '* (tab - len(text))}{time * 1e3:5.2f}ms",
+                    (255, 255, 255),
+                )
 
             print_time("UI handle time", t1 - t0, 1)
             print_time("vel_step time", t2 - t1, 2)
