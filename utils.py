@@ -125,9 +125,11 @@ def get_test_scenario(scenario_id: int, rows: int, cols: int):
         return test_scenario_3(rows, cols)
     elif scenario_id == 4:
         return test_scenario_4(rows, cols)
+    elif scenario_id == 5:
+        return test_scenario_5(rows, cols)
     else:
         raise ValueError(
-            f"Test scenario {scenario_id} does not exist, available test scenarios: 0, 1, 2, 3, 4"
+            f"Test scenario {scenario_id} does not exist, available test scenarios: 0, 1, 2, 3, 4, 5"
         )
 
 
@@ -215,8 +217,27 @@ def test_scenario_4(
     grid, source, u, v, solids = test_scenario_1(rows, cols)
     r3 = int(rows / 3)
     c3 = int(cols / 3)
-    solids[0:r3, c3:c3 + 5] = 1
-    #solids[r3:-1, 2*c3:2*c3 + 5] = 1
+    solids[0:r3, c3 : c3 + 5] = 1
+    # solids[r3:-1, 2*c3:2*c3 + 5] = 1
+
+    return grid, source, u, v, solids
+
+
+def test_scenario_5(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    there is only constant right directed, laminar wind and a solid disk in the middle.
+
+    :return grid, source, u, v, solids
+    """
+    grid, source, u, v, solids = test_scenario_1(rows, cols)
+    r2 = int(rows / 2)
+    c2 = int(cols / 2)
+    R = 2
+    solids[r2 - 5 : r2 + 5, c2 - 5 : c2 + 5] = 1
+
+    solids = fill_circle(solids, r2 - 10, c2 - 10, R, 1, fade=False)
 
     return grid, source, u, v, solids
 
