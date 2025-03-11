@@ -81,7 +81,7 @@ def add_source(grid: np.ndarray, source: np.ndarray, dt: float) -> None:
     grid += dt * source
 
 
-def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
+def diffuse(grid: np.ndarray, b: Flow, diff: float, dt: float) -> np.ndarray:
     """Returns a new modified grid, where each cell's value is diffused."""
     new_grid = np.zeros_like(grid)
     rows, cols = grid.shape
@@ -102,7 +102,7 @@ def diffuse(grid: np.ndarray, b: int, diff: float, dt: float) -> np.ndarray:
 
 
 def advect(
-    grid: np.ndarray, b: int, u: np.ndarray, v: np.ndarray, dt: float
+    grid: np.ndarray, b: Flow, u: np.ndarray, v: np.ndarray, dt: float
 ) -> np.ndarray:
     """Returns a new modified grid, where the velocities, u and v, are applied to the grid cell values."""
     new_grid = np.copy(grid)
@@ -149,8 +149,8 @@ def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
     div[1:-1, 1:-1] = -0.5 * h * (up_u - down_u + right_v - left_v)
 
-    set_bound(div, 0)
-    set_bound(p, 0)
+    set_bound(div, Flow.NO_FLOW)
+    set_bound(p, Flow.NO_FLOW)
 
     up = p[:-2, 1:-1]
     down = p[2:, 1:-1]
@@ -160,13 +160,13 @@ def project(u: np.ndarray, v: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     for _ in range(20):
         p[1:-1, 1:-1] = (div[1:-1, 1:-1] + up + down + left + right) / 4
 
-        set_bound(p, 0)
+        set_bound(p, Flow.NO_FLOW)
 
     u[1:-1, 1:-1] = u[1:-1, 1:-1] - 0.5 * (up - down) / h
     v[1:-1, 1:-1] = v[1:-1, 1:-1] - 0.5 * (right - left) / h
 
-    set_bound(u, 1)
-    set_bound(v, 2)
+    set_bound(u, Flow.VERTICAL)
+    set_bound(v, Flow.HORIZONTAL)
     return u, v
 
 
@@ -181,13 +181,13 @@ def set_bound_bad(grid: np.ndarray) -> np.ndarray:
     return new_grid
 
 
-def set_bound(grid: np.ndarray, b: int, test_body: str = "circle") -> None:
+def set_bound(grid: np.ndarray, b: Flow, test_body: str = "circle") -> None:
     rows, cols = grid.shape
     horizontal_multiplier, vertical_multiplier = 1, 1
 
-    if b == 1:
+    if b == Flow.VERTICAL:
         vertical_multiplier = -1
-    elif b == 2:
+    elif b == Flow.HORIZONTAL:
         horizontal_multiplier = -1
 
     grid[0, :] = vertical_multiplier * grid[1, :]
@@ -212,7 +212,7 @@ def set_bound(grid: np.ndarray, b: int, test_body: str = "circle") -> None:
 
 def set_box_bound(
     grid: np.ndarray,
-    b: int,
+    b: Flow,
     pos: Tuple[int, int],
     width: int,
     height: int,
@@ -224,9 +224,9 @@ def set_box_bound(
 
     horizontal_multiplier, vertical_multiplier = 1, 1
 
-    if b == 1:
+    if b == Flow.VERTICAL:
         vertical_multiplier = -1
-    elif b == 2:
+    elif b == Flow.HORIZONTAL:
         horizontal_multiplier = -1
 
     grid[box_top, box_left:box_right] = (
@@ -259,8 +259,8 @@ def dense_step(
     """Simulates on step for the density simulation. Returns a new modified grid.
     add sources, diffusion, advection"""
     add_source(grid, source, dt)
-    grid = diffuse(grid, 0, diff, dt)
-    grid = advect(grid, 0, u, v, dt)
+    grid = diffuse(grid, Flow.NO_FLOW, diff, dt)
+    grid = advect(grid, Flow.NO_FLOW, u, v, dt)
     return grid
 
 
@@ -274,10 +274,10 @@ def vel_step(
 ) -> Tuple[np.ndarray, np.ndarray]:
     add_source(u, u_source, dt)
     add_source(v, v_source, dt)
-    u = diffuse(u, 1, visc, dt)
-    v = diffuse(v, 2, visc, dt)
+    u = diffuse(u, Flow.VERTICAL, visc, dt)
+    v = diffuse(v, Flow.HORIZONTAL, visc, dt)
     u, v = project(u, v)
-    u = advect(u, 1, u, v, dt)
-    v = advect(v, 2, u, v, dt)
+    u = advect(u, Flow.VERTICAL, u, v, dt)
+    v = advect(v, Flow.HORIZONTAL, u, v, dt)
     u, v = project(u, v)
     return u, v
