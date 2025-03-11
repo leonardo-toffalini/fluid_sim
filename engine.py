@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Tuple, Annotated, Literal
 import pygame as pg
 import numpy as np
@@ -5,6 +6,12 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from utils import generate_perlin_noise_2d, hsl_to_rgb
+
+
+class Flow(Enum):
+    NO_FLOW = 0
+    VERTICAL = 1
+    HORIZONTAL = 2
 
 
 class GridDrawer:
@@ -174,15 +181,26 @@ def set_bound_bad(grid: np.ndarray) -> np.ndarray:
     return new_grid
 
 
-def set_bound(grid: np.ndarray, b: int, test_body: str = "box") -> None:
+def set_bound(grid: np.ndarray, b: int, test_body: str = "circle") -> None:
     rows, cols = grid.shape
-    grid[0, :] = -grid[1, :] if b == 1 else grid[1, :]
-    grid[rows - 1, :] = -grid[rows - 2, :] if b == 1 else grid[rows - 2, :]
-    grid[:, 0] = -grid[:, 1] if b == 2 else grid[:, 1]
-    grid[:, cols - 1] = -grid[:, cols - 2] if b == 2 else grid[:, cols - 2]
+    horizontal_multiplier, vertical_multiplier = 1, 1
+
+    if b == 1:
+        vertical_multiplier = -1
+    elif b == 2:
+        horizontal_multiplier = -1
+
+    grid[0, :] = vertical_multiplier * grid[1, :]
+    grid[rows - 1, :] = vertical_multiplier * grid[rows - 2, :]
+    grid[:, 0] = horizontal_multiplier * grid[:, 1]
+    grid[:, cols - 1] = horizontal_multiplier * grid[:, cols - 2]
 
     if test_body == "box":
         set_box_bound(grid, b, ((rows // 2) - 2, (cols // 2) - 10), 4, 4)
+    elif test_body == "circle":
+        set_box_bound(grid, b, ((rows // 2) - 2, (cols // 2) - 10), 10, 4)
+        set_box_bound(grid, b, ((rows // 2) - 5, (cols // 2) - 7), 4, 10)
+        set_box_bound(grid, b, ((rows // 2) - 4, (cols // 2) - 9), 8, 8)
 
     grid[0, 0] = 0.5 * (grid[1, 0] + grid[0, 1])
     grid[0, cols - 1] = 0.5 * (grid[1, cols - 1] + grid[0, cols - 2])
@@ -204,28 +222,30 @@ def set_box_bound(
     box_left = pos[1]
     box_right = pos[1] + width
 
+    horizontal_multiplier, vertical_multiplier = 1, 1
+
+    if b == 1:
+        vertical_multiplier = -1
+    elif b == 2:
+        horizontal_multiplier = -1
+
     grid[box_top, box_left:box_right] = (
-        -grid[box_top + 1, box_left:box_right]
-        if b == 1
-        else grid[box_top + 1, box_left:box_right]
+        vertical_multiplier * grid[box_top + 1, box_left:box_right]
     )
 
     grid[box_bot - 1, box_left:box_right] = (
-        -grid[box_bot - 2, box_left:box_right]
-        if b == 1
-        else grid[box_bot - 2, box_left:box_right]
+        vertical_multiplier * grid[box_bot - 2, box_left:box_right]
     )
 
     grid[box_top:box_bot, box_left] = (
-        -grid[box_top:box_bot, box_left + 1]
-        if b == 2
-        else grid[box_top:box_bot, box_left + 1]
+        horizontal_multiplier * grid[box_top:box_bot, box_left + 1]
     )
+
     grid[box_top:box_bot, box_right - 1] = (
-        -grid[box_top:box_bot, box_right - 2]
-        if b == 2
-        else grid[box_top:box_bot, box_right - 2]
+        horizontal_multiplier * grid[box_top:box_bot, box_right - 2]
     )
+
+    grid[box_top+1:box_bot-1, box_left+1:box_right-1] = 0
 
 
 def dense_step(
