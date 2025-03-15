@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from enum import Enum
 
-from utils import generate_perlin_noise_2d, hsl_to_rgb
+from utils import generate_perlin_noise_2d, hsl_to_rgb, fill_circle
 
 
 class GridDrawer:
@@ -82,15 +82,23 @@ class Flow(Enum):
     HORIZONTAL = 2
 
 
-class BoundaryOld:
-    def apply(self, grid: np.ndarray, b: int) -> None:
-        set_bound(grid, b)
-
-
-class Boundary:
+class SolidsHandler:
     def __init__(self, bound: np.ndarray):
         self.bound = bound
-        self.mask = bound != 0
+        self._build_cache()
+
+    def add_solid(self, i: int, j: int, size: int) -> None:
+        fill_circle(self.bound, i, j, size, 1, fade=False)
+        self._build_cache()
+
+    def erase_solid(self, i: int, j: int, size: int) -> None:
+        # TODO: make permanent walls that can not be erased
+        fill_circle(self.bound, i, j, size, 0, fade=False)
+        self._build_cache()
+
+    def _build_cache(self):
+        self.mask = (self.bound != 0)
+        self.mask_neg = (self.mask == 0)
 
         zero_mask = 1 - self.bound  # assumes that all elems either 0 or 1
         padded = np.pad(zero_mask, pad_width=1, mode="constant", constant_values=0)
@@ -101,13 +109,14 @@ class Boundary:
         )
 
         # TODO: Handle elements with only solid neighbours
+        #  (zeroing them out atm)
         cnt[cnt != 0] = 1 / cnt[cnt != 0]
         cnt[self.mask == 0] = 0
 
-        self.left = Boundary.shift_and_mask(cnt, Dir.LEFT)
-        self.right = Boundary.shift_and_mask(cnt, Dir.RIGHT)
-        self.up = Boundary.shift_and_mask(cnt, Dir.UP)
-        self.down = Boundary.shift_and_mask(cnt, Dir.DOWN)
+        self.left = SolidsHandler.shift_and_mask(cnt, self.mask_neg, Dir.LEFT)
+        self.right = SolidsHandler.shift_and_mask(cnt, self.mask_neg, Dir.RIGHT)
+        self.up = SolidsHandler.shift_and_mask(cnt, self.mask_neg, Dir.UP)
+        self.down = SolidsHandler.shift_and_mask(cnt, self.mask_neg, Dir.DOWN)
 
     def apply(self, grid: np.ndarray, flow: Flow) -> None:
         m_v, m_h = 1, 1
@@ -117,18 +126,17 @@ class Boundary:
             m_v = -1
 
         values_in_solids = (
-            m_h * Boundary.shift(grid * self.left, Dir.RIGHT)
-            + m_h * Boundary.shift(grid * self.right, Dir.LEFT)
-            + m_v * Boundary.shift(grid * self.up, Dir.DOWN)
-            + m_v * Boundary.shift(grid * self.down, Dir.UP)
+                m_h * SolidsHandler.shift(grid * self.left, Dir.RIGHT)
+                + m_h * SolidsHandler.shift(grid * self.right, Dir.LEFT)
+                + m_v * SolidsHandler.shift(grid * self.up, Dir.DOWN)
+                + m_v * SolidsHandler.shift(grid * self.down, Dir.UP)
         )
 
         grid[self.mask] = values_in_solids[self.mask]
 
     @staticmethod
-    def shift_and_mask(arr: np.ndarray, dir: Dir) -> np.ndarray:
-        shifted = Boundary.shift(arr, dir)
-        mask = arr == 0
+    def shift_and_mask(arr: np.ndarray, mask, dir: Dir) -> np.ndarray:
+        shifted = SolidsHandler.shift(arr, dir)
         shifted *= mask
         return shifted
 
@@ -349,19 +357,29 @@ if __name__ == "__main__":
     m = np.zeros((10, 10))
     # m[4:8, 5:7] = 1
     # m[4, 4] = 1
-    m[0, :] = 1
-    m[:, 0] = 1
+    # m[0, :] = 1
+    # m[:, 0] = 1
+    # m = np.eye(10)
 
-    b = Boundary(m)
-    print(b.bound)
-    print()
-    print(b.left)
-    print()
-    print(b.right)
-    print()
-    print(b.up)
-    print()
-    print(b.down)
+    fill_circle(m, 5, 5, 2, 1, fade=False)
+
+
+    def pr(da2):
+        for da1 in da2:
+            for e in da1:
+                print(f"{e:.3f} ", end='')
+            print()
+
+    b = SolidsHandler(m)
+    pr(b.bound)
+    print(Dir.LEFT)
+    pr(b.left)
+    print(Dir.RIGHT)
+    pr(b.right)
+    print(Dir.UP)
+    pr(b.up)
+    print(Dir.DOWN)
+    pr(b.down)
 
     moc = np.arange(100).reshape(m.shape)
     # asd = np.zeros_like(m)

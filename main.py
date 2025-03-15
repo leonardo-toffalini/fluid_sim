@@ -4,12 +4,37 @@ import numpy as np
 import time
 import tyro
 from dataclasses import dataclass
-from engine import add_source, GridDrawer, dense_step, vel_step, Boundary, BoundaryOld
+from engine import add_source, GridDrawer, dense_step, vel_step, SolidsHandler
 import utils
+from enum import Enum
 from utils import (
     pos_to_index,
     circle_source,
 )
+
+
+class DrawMode(Enum):
+    SOURCE = 0
+    PLACE_SOLID = 1
+    ERASE_SOLID = 2
+
+
+class DrawState:
+    def __init__(self):
+        self.mode = DrawMode.SOURCE
+        self.token = 'SOURCE'
+
+    def handle_state_change(self, event):
+        if event.type == pg.KEYUP:
+            if event.key == pg.K_s:
+                self.mode = DrawMode.SOURCE
+                self.token = 'SOURCE'
+            elif event.key == pg.K_w:
+                self.mode = DrawMode.PLACE_SOLID
+                self.token = 'SOLID'
+            elif event.key == pg.K_e:
+                self.mode = DrawMode.ERASE_SOLID
+                self.token = 'ERASE'
 
 
 @dataclass
@@ -42,7 +67,8 @@ def main(args):
     pg.display.set_caption("Fluid simulation")
     font = pygame.freetype.SysFont("monospace", 26)
     grid_drawer = GridDrawer(rows, cols, args.cell_size)
-    boundary = Boundary(solids)
+    solids_handler = SolidsHandler(solids)
+    draw_state = DrawState()
 
     running = True
     clock = pg.time.Clock()
@@ -54,6 +80,8 @@ def main(args):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
+            else:
+                draw_state.handle_state_change(event)
 
         screen.fill((6, 9, 10))
 
@@ -64,14 +92,19 @@ def main(args):
             mouse_j, mouse_i = pos_to_index(
                 mouse_x, mouse_y, args.cell_size, args.WIDTH, args.HEIGHT
             )
-            ui_source = circle_source(grid, mouse_i, mouse_j, radius=3, weight=12)
-            add_source(grid, ui_source, dt=dt)
+            if draw_state.mode == DrawMode.SOURCE:
+                ui_source = circle_source(grid, mouse_i, mouse_j, radius=3, weight=12)
+                add_source(grid, ui_source, dt=dt)
+            elif draw_state.mode == DrawMode.PLACE_SOLID:
+                solids_handler.add_solid(mouse_i, mouse_j, 3)
+            elif draw_state.mode == DrawMode.ERASE_SOLID:
+                solids_handler.erase_solid(mouse_i, mouse_j, 3)
 
         # diff equation solver
         t1 = time.perf_counter()
-        u, v = vel_step(u, v, u_source, v_source, boundary, visc=args.visc, dt=dt)
+        u, v = vel_step(u, v, u_source, v_source, solids_handler, visc=args.visc, dt=dt)
         t2 = time.perf_counter()
-        grid = dense_step(grid, source, u, v, boundary, diff=args.diff, dt=dt)
+        grid = dense_step(grid, source, u, v, solids_handler, diff=args.diff, dt=dt)
         t3 = time.perf_counter()
         if args.vis_type == "dens":
             grid_drawer.draw_grid(grid)
@@ -82,6 +115,7 @@ def main(args):
         # render fps counter on the screen
         fps = int(clock.get_fps())
         font.render_to(screen, (10, 10), f"FPS {fps}", (255, 255, 255))
+        font.render_to(screen, (args.WIDTH - 100, 10), draw_state.token, (255, 255, 255))
 
         if args.debug_print:
 
