@@ -19,34 +19,43 @@ class DrawMode(Enum):
     ERASE_SOLID = 2
 
 
+class VisType(Enum):
+    DENS = 0
+    VEL = 1
+
+
 class DrawState:
     def __init__(self):
         self.mode = DrawMode.SOURCE
-        self.token = 'SOURCE'
+        self.mode_token = 'SOURCE'
+        self.vis_type = VisType.DENS
 
     def handle_state_change(self, event):
         if event.type == pg.KEYUP:
             if event.key == pg.K_s:
                 self.mode = DrawMode.SOURCE
-                self.token = 'SOURCE'
+                self.mode_token = 'SOURCE'
             elif event.key == pg.K_w:
                 self.mode = DrawMode.PLACE_SOLID
-                self.token = 'SOLID'
+                self.mode_token = 'SOLID'
             elif event.key == pg.K_e:
                 self.mode = DrawMode.ERASE_SOLID
-                self.token = 'ERASE'
-
+                self.mode_token = 'ERASE'
+            elif event.key == pg.K_SPACE:
+                if self.vis_type == VisType.DENS:
+                    self.vis_type = VisType.VEL
+                else:
+                    self.vis_type = VisType.DENS
 
 @dataclass
 class Args:
-    WIDTH: int = 800
-    HEIGHT: int = 600
+    WIDTH: int = 1200
+    HEIGHT: int = 900
     test_scenario: int = 1
     cell_size: int = 10
-    diff: float = 1e-6
+    diff: float = 1e-5
     visc: float = 1e-4
     debug_print: bool = False
-    vis_type: str = "dens"
 
 
 def main(args):
@@ -93,7 +102,7 @@ def main(args):
                 mouse_x, mouse_y, args.cell_size, args.WIDTH, args.HEIGHT
             )
             if draw_state.mode == DrawMode.SOURCE:
-                ui_source = circle_source(grid, mouse_i, mouse_j, radius=3, weight=12)
+                ui_source = circle_source(grid, mouse_i, mouse_j, radius=5, weight=15)
                 add_source(grid, ui_source, dt=dt)
             elif draw_state.mode == DrawMode.PLACE_SOLID:
                 solids_handler.add_solid(mouse_i, mouse_j, 3)
@@ -106,19 +115,18 @@ def main(args):
         t2 = time.perf_counter()
         grid = dense_step(grid, source, u, v, solids_handler, diff=args.diff, dt=dt)
         t3 = time.perf_counter()
-        if args.vis_type == "dens":
+        if draw_state.vis_type == VisType.DENS:
             grid_drawer.draw_grid(grid)
-        elif args.vis_type == "vel":
+        elif draw_state.vis_type == VisType.VEL:
             grid_drawer.draw_velocity_field(u, v)
 
         t4 = time.perf_counter()
         # render fps counter on the screen
         fps = int(clock.get_fps())
         font.render_to(screen, (10, 10), f"FPS {fps}", (255, 255, 255))
-        font.render_to(screen, (args.WIDTH - 100, 10), draw_state.token, (255, 255, 255))
+        font.render_to(screen, (args.WIDTH - 100, 10), draw_state.mode_token, (255, 255, 255))
 
         if args.debug_print:
-
             def print_time(text, time, row, tab=15):
                 font.render_to(
                     screen,

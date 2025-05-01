@@ -127,6 +127,8 @@ def get_test_scenario(scenario_id: int, rows: int, cols: int):
         return test_scenario_4(rows, cols)
     elif scenario_id == 5:
         return test_scenario_5(rows, cols)
+    elif scenario_id == 6:
+        return test_scenario_6(rows, cols)
     else:
         raise ValueError(
             f"Test scenario {scenario_id} does not exist, available test scenarios: 0, 1, 2, 3, 4, 5"
@@ -238,6 +240,28 @@ def test_scenario_5(
     solids[r2 - 5 : r2 + 5, c2 - 5 : c2 + 5] = 1
 
     solids = fill_circle(solids, r2 - 10, c2 - 10, R, 1, fade=False)
+
+    return grid, source, u, v, solids
+
+
+def test_scenario_6(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    and there is right facing wind with fractal noise.
+
+    Returns:
+        grid, source, u, v, solids
+    """
+    grid = np.zeros(shape=(rows, cols))
+    u = np.zeros_like(grid)
+    noise = generate_fractal_noise_2d(grid.shape, res=(2, 2))
+    v = np.zeros_like(grid)
+    v[:, 1] = 0.5
+    v += noise / 200
+    source = np.zeros_like(grid)
+    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
+    solids = make_solid_box(source.shape)
 
     return grid, source, u, v, solids
 
