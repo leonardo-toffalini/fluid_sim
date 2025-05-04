@@ -2,12 +2,15 @@ import numpy as np
 from typing import Tuple
 
 
-def fill_circle(arr, i, j, R, val):
+def fill_circle(arr, i, j, R, val, fade=True):
     height, width = arr.shape
     y, x = np.ogrid[:height, :width]
     dist_from_center = np.sqrt((x - j) ** 2 + (y - i) ** 2)
     mask = dist_from_center <= R
-    arr[mask] = val * (R - dist_from_center[mask])
+    if fade:
+        arr[mask] = val * (R - dist_from_center[mask])
+    else:
+        arr[mask] = val
     return arr
 
 
@@ -120,30 +123,37 @@ def get_test_scenario(scenario_id: int, rows: int, cols: int):
         return test_scenario_2(rows, cols)
     elif scenario_id == 3:
         return test_scenario_3(rows, cols)
+    elif scenario_id == 4:
+        return test_scenario_4(rows, cols)
+    elif scenario_id == 5:
+        return test_scenario_5(rows, cols)
+    elif scenario_id == 6:
+        return test_scenario_6(rows, cols)
     else:
         raise ValueError(
-            f"Test scenario {scenario_id} does not exist, available test scenarios: 0, 1, 2, 3"
+            f"Test scenario {scenario_id} does not exist, available test scenarios: 0, 1, 2, 3, 4, 5"
         )
 
 
 def test_scenario_0(
     rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Sets up an empty test scenario"""
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
     source = np.zeros_like(grid)
-    return grid, source, u, v
+    solids = make_solid_box(source.shape)
+    return grid, source, u, v, solids
 
 
 def test_scenario_1(
     rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
     and there is only constant right directed, laminar wind.
 
-    :return grid, source, u, v
+    :return grid, source, u, v, solids
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
@@ -151,17 +161,18 @@ def test_scenario_1(
     v[:, 1] = 0.5
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 150
+    solids = make_solid_box(source.shape)
 
-    return grid, source, u, v
+    return grid, source, u, v, solids
 
 
 def test_scenario_2(
     rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Sets up a test scenario where there are three dot sources in the middle with no wind.
 
     Returns:
-        grid, source, u, v
+        grid, source, u, v, solids
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
@@ -170,18 +181,19 @@ def test_scenario_2(
     source[2 * rows // 3, cols // 2] = 200
     source[rows // 2, cols // 3] = 200
     source[rows // 2, 2 * cols // 3] = 200
+    solids = make_solid_box(source.shape)
 
-    return grid, source, u, v
+    return grid, source, u, v, solids
 
 
 def test_scenario_3(
     rows: int, cols: int
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
     and there is right facing wind with perlin noise.
 
     Returns:
-        grid, source, u, v
+        grid, source, u, v, solids
     """
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
@@ -191,5 +203,73 @@ def test_scenario_3(
     v += noise / 200
     source = np.zeros_like(grid)
     source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
+    solids = make_solid_box(source.shape)
 
-    return grid, source, u, v
+    return grid, source, u, v, solids
+
+
+def test_scenario_4(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    there is only constant right directed, laminar wind and a solid wall in the middle.
+
+    :return grid, source, u, v, solids
+    """
+    grid, source, u, v, solids = test_scenario_1(rows, cols)
+    r3 = int(rows / 3)
+    c3 = int(cols / 3)
+    solids[0:r3, c3 : c3 + 5] = 1
+    # solids[r3:-1, 2*c3:2*c3 + 5] = 1
+
+    return grid, source, u, v, solids
+
+
+def test_scenario_5(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    there is only constant right directed, laminar wind and a solid disk in the middle.
+
+    :return grid, source, u, v, solids
+    """
+    grid, source, u, v, solids = test_scenario_1(rows, cols)
+    r2 = int(rows / 2)
+    c2 = int(cols / 2)
+    R = 2
+    solids[r2 - 5 : r2 + 5, c2 - 5 : c2 + 5] = 1
+
+    solids = fill_circle(solids, r2 - 10, c2 - 10, R, 1, fade=False)
+
+    return grid, source, u, v, solids
+
+
+def test_scenario_6(
+    rows: int, cols: int
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Sets up a test scenario where there is a strip of sources in the middle of the left edge,
+    and there is right facing wind with fractal noise.
+
+    Returns:
+        grid, source, u, v, solids
+    """
+    grid = np.zeros(shape=(rows, cols))
+    u = np.zeros_like(grid)
+    noise = generate_fractal_noise_2d(grid.shape, res=(2, 2))
+    v = np.zeros_like(grid)
+    v[:, 1] = 0.5
+    v += noise / 200
+    source = np.zeros_like(grid)
+    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 200
+    solids = make_solid_box(source.shape)
+
+    return grid, source, u, v, solids
+
+
+def make_solid_box(shape: Tuple[int, int]) -> np.ndarray:
+    box = np.zeros(shape)
+    box[0, :] = 1
+    box[-1, :] = 1
+    box[:, 0] = 1
+    box[:, -1] = 1
+    return box
