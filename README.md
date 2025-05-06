@@ -1,5 +1,5 @@
 # Eulerian fluid simulation
-This project aims to provide a succint python implementation of the Eulerian fluid simulation 
+This project aims to provide a succinct python implementation of the Eulerian fluid simulation 
 described in <http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf>
 
 ### Getting Started
@@ -16,15 +16,34 @@ If you are using anaconda or miniconda create a conda environment with the follo
 conda env create -f environment.yaml
 ```
 
-### TODO
-- Possible optimization:
-    - [ ] Don't copy grid on each function call.
-    Instead, pass around two pointers to two grids and only mutate one while we take values from the other, just like double buffer rendering.
+### Test scenarios
+You can quickly test the program with some pre set up scenarios with the following command:
+```sh
+python main.py --test-scenario <0|1|2|3|4|5|6>
+```
 
-- Features:
-    - [x] Add visualization for velocity field
-    - [ ] Implement a way to have solid objects in the scene
-    - [ ] Add user input for moving solid objects in the scene
-    - [ ] Create a nice looking title screen for the simulation
+### How it works
+#### Navier-Stokes equations
+The following two partial differential equations characterize fluids. Our goal is to solve these equations to simulate the behaviour of fluids.
+$$
+\frac{\partial u}{\partial t} = -(u \cdot \nabla) u+\nu \nabla^2 u+\mathbf{f}
+$$
+$$
+\frac{\partial \rho}{\partial t} = -(u \cdot \nabla) \rho+\kappa \nabla^2 \rho+S
+$$
+
+#### Diagram of the flow of the simulation
 
 
+#### Dense step
+
+
+#### Vel step
+
+
+### Future goals
+We spent a lot of effort optimizing the python implementation, but we are still not satisfied with the performance at higher resolutions. Python is not typically used for physics simulations, but we stuck we both are very familiar with python and switching to a more performant lower-level language would have resulted in worse developer experience. 
+
+The easiest way to boost the performance of the code would be to port the projet to C/C++. The more natural path would be to rewrite the project as a shader program, given the nature of this project.
+
+Another aspect we didn't get to work on during this project is to extend the simulation into the third dimension, giving rise to a more real-world like visual of fluids.
