@@ -50,7 +50,7 @@ def unsigned_byte(x: float) -> int:
     return min(max(int(x), 0), 255)
 
 
-def hsl_to_rgb(h, s, l):
+def hsl_to_rgb(h, s, l) -> int:
     """Returns an integer where the last 3 * 8 bits are the red, green, and blue channels"""
     h = h / 360.0
     s = s / 100.0
@@ -71,6 +71,11 @@ def hsl_to_rgb(h, s, l):
         | unsigned_byte(b * 255)
     )
 
+def int_to_rgb(rgb_int: int) -> tuple[int, int, int]:
+    r = (rgb_int >> 16) & 255
+    g = (rgb_int >> 8) & 255
+    b = rgb_int & 255
+    return (r, g, b)
 
 def generate_perlin_noise_2d(shape, res):
     def f(t):

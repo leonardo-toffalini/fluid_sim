@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 from enum import Enum
 
-from utils import generate_perlin_noise_2d, hsl_to_rgb, fill_circle
+from utils import hsl_to_rgb, fill_circle, int_to_rgb
 
 
 class GridDrawer:
@@ -49,7 +49,7 @@ class GridDrawer:
                 color = self.hsl_to_rgb_table[
                     int(l[y, x])
                 ]  # TODO: consider proper rounding
-                pg.draw.rect(self.screen, color, self.cells[y, x])
+                pg.draw.rect(self.screen, int_to_rgb(color), self.cells[y, x])
 
     def draw_velocity_field(
         self,
