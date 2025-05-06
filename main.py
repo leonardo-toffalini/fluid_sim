@@ -52,8 +52,8 @@ class Args:
     WIDTH: int = 1200
     HEIGHT: int = 900
     test_scenario: int = 1
-    cell_size: int = 10
-    diff: float = 1e-5
+    cell_size: int = 5
+    diff: float = 1e-6
     visc: float = 1e-4
     debug_print: bool = False
 

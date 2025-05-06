@@ -163,9 +163,9 @@ def test_scenario_1(
     grid = np.zeros(shape=(rows, cols))
     u = np.zeros_like(grid)
     v = np.zeros_like(grid)
-    v[:, 1] = 0.5
+    v[:, 1:-2] = 0.001
     source = np.zeros_like(grid)
-    source[(rows // 2) - 3 : (rows // 2) + 3, 1] = 150
+    source[(rows // 2) - 6 : (rows // 2) + 6, 1] = 150
     solids = make_solid_box(source.shape)
 
     return grid, source, u, v, solids
