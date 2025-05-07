@@ -36,6 +36,7 @@ Ezen az ábrán a szimuláció lépései láthatók, melyeket a Navier-Stokes eg
 3. Vel step
 
 ### Dense step
+A sűrűségmező update-telő függvénye. Az alábbi függvényekből áll elő:
 1. Add source
 2. Diffuse
 3. Advect
@@ -52,20 +53,31 @@ $$x_0(i-1,j)+ x_0(i+1,j) + x_0(i,j-1) + x_0(i,j+1) - 4 \cdot x_0(i,j)$$ \
 A $$\texttt{diff bad()}$$ függvény kiszámítja minden rácsponton a "sűrűségcseréket", majd hozzáadja őket a meglévő értékekhez. 
 $$a = dt \cdot diff \cdot rows \cdot cols$$, ahol $$a$$: diffuziós ráta; $$dt$$: időlépés; $$rows$$: sorok száma; $$cols$$: oszlopok száma
 $$x(i,j) = x_0(i,j) + a \cdot (x_0(i-1,j)+ x_0(i+1,j) + x_0(i,j-1) + x_0(i,j+1) - 4 \cdot x_0(i,j))$$
-Ez az eljárás egyszerűen implementálható, és intuitív, de nagy $$a$$ esetén nagyon instabillá válhat a szimulációnk, és oszcillálni fog. Emiatt az explicit módszer helyett implicit módszert kell alkalmaznunk, hogy garantáljuk a stabilitását a szimulációnak, ezt a Gauss-Seidel iteráció segítségével tesszük meg. Tehát olyan módszert kell találnunk, ami "backtracking"-gel megkapjuk a kiinduló sűrűséget. \
+Ez az eljárás egyszerűen implementálható, és intuitív, de nagy $$a$$ esetén nagyon instabillá válhat a szimulációnk, és oszcillálni fog. Emiatt az explicit módszer helyett implicit módszert kell alkalmaznunk, hogy garantáljuk a stabilitását a szimulációnak, ezt a Gauss-Seidel iteráció segítségével tesszük meg. Tehát olyan módszert kell találnunk, ami "backtracking"-gel (visszafelé diffunálva) megkapjuk a kiinduló sűrűséget. \
 $$x_0(i,j) = x(i,j)-a \cdot (x(i-1,j)+ x(i+1,j) + x(i,j-1) + x(i,j+1) - 4 \cdot x(i,j))$$
-#### Advect
+Így egy lineáris egyenletrendszer. A $$\texttt{diff()}$$ függvényben tehát kiszámoljuk minden cella új értékét a megelőző szomszédos cellák aktuális értékeinek súlyozott átlaga segítségével, a Gauss-Seidel-iteráció 20 iterációt fog végre hajtani, ez nem pontos megoldás, de a szimulációhoz elegendő. (Persze lehetne több iterációval is.)  Tehát, így fogjuk kiszámítani az új sűrűséget minden cellára:
+$$x(i,j) = x_0(i,j)+a \cdot (x(i-1,j)+ x(i+1,j) + x(i,j-1) + x(i,j+1) - 4 \cdot x(i,j))/(1+4\cdot a)$$
+Az implicit módszer, illetve az $$1+4 \cdot a$$-val való leosztással lesz stabil a szimulációnk. 
+![image](https://github.com/user-attachments/assets/629bc39f-4b10-4885-a8c2-d96619e757d7)
 
+#### Advect
+Az $$\texttt{advect()}$$ függvény azért felelős, hogy a sűrűség egy adott sebességmezőt kövessen, az $$u$$ és $$v$$ mentén. Alapötlet az advekciós lépés mögött: ahelyett, hogy az (a) ábrán látható sebességmező mentén előre haladnánk az időben a cellák középpontjaival (b), inkább azokat a részecskéket keressük meg, amelyek pontosan a cellák középpontjába érkeznek meg – ezt úgy tesszük, hogy visszafelé követjük az időben a cellák középpontjaitól indulva a pályájukat (c).
+![image](https://github.com/user-attachments/assets/08325a6e-2a23-4ef6-b117-6ceea2aee6e0)
+A függvény főlépései: 
+1. rácspontok visszakövetkése
+2. az ottani értéket interpolálja
+3. megkapjuk az új rácsot
 ### Vel step
+A sűrűségmező bemutatása után térjünk rá a sebességmezőre. Ebben a függvényben egy függvényt kivéve minden más ismerős lesz már az előzőekben említett $$\texttt{avect()}, \texttt{diff()}, \texttt{add source()}$$ függvények miatt. 
 1. Add source
 2. Diffuse
 3. Project
 4. Advect
 5. Project
-
 #### Project
-
-
+Ez a függvény vizuálisan azt segíti, hogy örvényes, élethű mozgásokat tudjunk létrehozni. A tömegmegmaradás céljából a Hodge-felbontást használjuk, ami azt mondja ki, hogy minden sebességmező felbontható egy tömegmegmaradó mezőre és egy gradiensmezőre.
+![image](https://github.com/user-attachments/assets/9ac15df2-6949-44d6-8744-1faab7d0e93d)
 ### Demo (Live demo, maybe)
+TODO felvételek elkészítése
 ...
 
