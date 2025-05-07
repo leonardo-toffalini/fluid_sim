@@ -579,3 +579,178 @@ class SimulationStepsAnimation(Scene):
         self.play(Write(loop_text))
         self.wait(2)
 
+class CellNeighborsAnimation(Scene):
+    def construct(self):
+        # Parameters
+        cell_size = 1.5
+        stroke_width = 3
+        arrow_offset = 0.15  # Offset for separating opposing arrows
+        
+        # Create center cell (i,j)
+        center_cell = Square(
+            side_length=cell_size,
+            stroke_width=stroke_width
+        ).move_to(ORIGIN)
+        
+        # Create neighboring cells
+        top_cell = Square(
+            side_length=cell_size,
+            stroke_width=stroke_width
+        ).next_to(center_cell, UP, buff=0)
+        
+        bottom_cell = Square(
+            side_length=cell_size,
+            stroke_width=stroke_width
+        ).next_to(center_cell, DOWN, buff=0)
+        
+        left_cell = Square(
+            side_length=cell_size,
+            stroke_width=stroke_width
+        ).next_to(center_cell, LEFT, buff=0)
+        
+        right_cell = Square(
+            side_length=cell_size,
+            stroke_width=stroke_width
+        ).next_to(center_cell, RIGHT, buff=0)
+        
+        # Group all cells
+        cells = VGroup(center_cell, top_cell, bottom_cell, left_cell, right_cell)
+        
+        # Create arrows with offsets to prevent overlap
+        # Horizontal arrows (left <-> center)
+        left_to_center = Arrow(
+            start=left_cell.get_right() + LEFT * 0.4 + UP * arrow_offset,
+            end=center_cell.get_left() + RIGHT * 0.4 + UP * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        center_to_left = Arrow(
+            start=center_cell.get_left() + RIGHT * 0.4 + DOWN * arrow_offset,
+            end=left_cell.get_right() + LEFT * 0.4 + DOWN * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        # Horizontal arrows (center <-> right)
+        center_to_right = Arrow(
+            start=center_cell.get_right() + LEFT * 0.4 + UP * arrow_offset,
+            end=right_cell.get_left() + RIGHT * 0.4 + UP * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        right_to_center = Arrow(
+            start=right_cell.get_left() + RIGHT * 0.4 + DOWN * arrow_offset,
+            end=center_cell.get_right() + LEFT * 0.4 + DOWN * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        # Vertical arrows (top <-> center)
+        top_to_center = Arrow(
+            start=top_cell.get_bottom() + UP * 0.4 + RIGHT * arrow_offset,
+            end=center_cell.get_top() + DOWN * 0.4 + RIGHT * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        center_to_top = Arrow(
+            start=center_cell.get_top() + DOWN * 0.4 + LEFT * arrow_offset,
+            end=top_cell.get_bottom() + UP * 0.4 + LEFT * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        # Vertical arrows (center <-> bottom)
+        center_to_bottom = Arrow(
+            start=center_cell.get_bottom() + UP * 0.4 + RIGHT * arrow_offset,
+            end=bottom_cell.get_top() + DOWN * 0.4 + RIGHT * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        bottom_to_center = Arrow(
+            start=bottom_cell.get_top() + DOWN * 0.4 + LEFT * arrow_offset,
+            end=center_cell.get_bottom() + UP * 0.4 + LEFT * arrow_offset,
+            buff=0,
+            stroke_width=2,
+            max_tip_length_to_length_ratio=0.2
+        )
+        
+        # Group all arrows
+        arrows = VGroup(
+            left_to_center, center_to_left,
+            center_to_right, right_to_center,
+            top_to_center, center_to_top,
+            center_to_bottom, bottom_to_center
+        )
+        
+        # Group cells and arrows together for moving
+        cell_diagram = VGroup(cells, arrows)
+        
+        # Show cells with cross pattern
+        self.play(
+            Create(center_cell),
+            Create(top_cell),
+            Create(bottom_cell),
+            Create(left_cell),
+            Create(right_cell),
+        )
+        self.wait(0.5)
+        
+        # Show arrows in pairs
+        self.play(
+            Create(left_to_center),
+            Create(center_to_left),
+        )
+        self.wait(0.3)
+        
+        self.play(
+            Create(center_to_right),
+            Create(right_to_center),
+        )
+        self.wait(0.3)
+        
+        self.play(
+            Create(top_to_center),
+            Create(center_to_top),
+        )
+        self.wait(0.3)
+        
+        self.play(
+            Create(center_to_bottom),
+            Create(bottom_to_center),
+        )
+        self.wait(1)
+        
+        # Move the entire diagram to the left
+        self.play(
+            cell_diagram.animate.shift(LEFT * 3.5)
+        )
+        self.wait(0.5)
+        
+        
+        diffusion_eq = MathTex(
+            r"x'_{i,j} = x_{i,j} + a \cdot (x_{i-1,j} + x_{i+1,j} \\ + x_{i,j-1} + x_{i,j+1} - 4 \cdot x_{i,j})",
+            font_size=36
+        ).move_to(RIGHT * 3 + UP * 1.5)
+
+        diffusion_eq_2 = MathTex(
+            r"x_{i,j} = x'_{i,j} - a \cdot (x'_{i-1,j} + x'_{i+1,j} \\ + x'_{i,j-1} + x'_{i,j+1} - 4 \cdot x'_{i,j})",
+            font_size=36
+        ).move_to(RIGHT * 3)
+
+        self.play(Write(diffusion_eq))
+        self.wait(0.3)
+
+        self.play(Write(diffusion_eq_2))
+        self.wait(0.3)
+
