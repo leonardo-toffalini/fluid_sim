@@ -1,6 +1,8 @@
 from manim import *
 import numpy as np
 
+np.random.seed(42)
+
 class NavierStokesEq(Scene):
     def construct(self):
         title = Title("Navier-Stokes equations")
@@ -739,18 +741,347 @@ class CellNeighborsAnimation(Scene):
         
         
         diffusion_eq = MathTex(
-            r"x'_{i,j} = x_{i,j} + a \cdot (x_{i-1,j} + x_{i+1,j} \\ + x_{i,j-1} + x_{i,j+1} - 4 \cdot x_{i,j})",
+            r"x'_{i,j} = x_{i,j} + a (x_{i-1,j} + x_{i+1,j} \\ + x_{i,j-1} + x_{i,j+1} - 4 \cdot x_{i,j})",
             font_size=36
         ).move_to(RIGHT * 3 + UP * 1.5)
 
         diffusion_eq_2 = MathTex(
-            r"x_{i,j} = x'_{i,j} - a \cdot (x'_{i-1,j} + x'_{i+1,j} \\ + x'_{i,j-1} + x'_{i,j+1} - 4 \cdot x'_{i,j})",
+            r"x_{i,j} = x'_{i,j} - a (x'_{i-1,j} + x'_{i+1,j} \\ + x'_{i,j-1} + x'_{i,j+1} - 4 x'_{i,j})",
+            font_size=36
+        ).move_to(RIGHT * 3)
+
+        diffusion_eq_3 = MathTex(
+            r"x'_{i,j} = x_{i,j} + a (x_{i-1,j} + x_{i+1,j} \\ + x_{i,j-1} + x_{i,j+1} - 4 x_{i,j})/(1 + 4 a)",
             font_size=36
         ).move_to(RIGHT * 3)
 
         self.play(Write(diffusion_eq))
-        self.wait(0.3)
+        self.wait(15)
 
         self.play(Write(diffusion_eq_2))
+        self.wait(15)
+
+        self.play(FadeOut(diffusion_eq), diffusion_eq_2.animate.shift(UP * 1.5))
         self.wait(0.3)
+
+        self.play(Write(diffusion_eq_3))
+        self.wait(2)
+
+        # final pause
+        self.wait(1)
+
+class VelocityFieldAnimation(Scene):
+    def construct(self):
+        # Parameters
+        n_rows, n_cols = 7, 7  # Grid dimensions
+        grid_width, grid_height = 6, 6  # Grid size on screen
+        cell_width = grid_width / n_cols
+        cell_height = grid_height / n_rows
+        
+        # PART 1: VELOCITY FIELD VISUALIZATION
+        # Create grid
+        grid = VGroup()
+        for i in range(n_rows + 1):
+            # Horizontal lines
+            h_line = Line(
+                start=[-grid_width/2, -grid_height/2 + i * cell_height, 0],
+                end=[grid_width/2, -grid_height/2 + i * cell_height, 0],
+                stroke_width=1,
+                color=LIGHT_GRAY
+            )
+            grid.add(h_line)
+            
+        for j in range(n_cols + 1):
+            # Vertical lines
+            v_line = Line(
+                start=[-grid_width/2 + j * cell_width, -grid_height/2, 0],
+                end=[-grid_width/2 + j * cell_width, grid_height/2, 0],
+                stroke_width=1,
+                color=LIGHT_GRAY
+            )
+            grid.add(v_line)
+        
+        # Create velocity field (swirling pattern)
+        arrows = VGroup()
+        
+        # Function to calculate velocity at any point
+        def get_velocity(x, y):
+            # Center of the swirl
+            center_x, center_y = 0, 0
+            
+            # Distance from center
+            dx = x - center_x
+            dy = y - center_y
+            distance = np.sqrt(dx**2 + dy**2)
+            
+            # Swirl strength decreases with distance from center
+            strength = 1.0 - min(1.0, distance / 3.0)
+            
+            # Tangential velocity (perpendicular to radius)
+            vx = -dy * strength
+            vy = dx * strength
+            
+            # Add some randomness
+            vx += np.random.uniform(-0.2, 0.2)
+            vy += np.random.uniform(-0.2, 0.2)
+            
+            # Normalize and scale - increased scaling factor
+            magnitude = np.sqrt(vx**2 + vy**2)
+            if magnitude > 0:
+                vx = vx / magnitude * cell_width * 1.2 * strength 
+                vy = vy / magnitude * cell_height * 1.2 * strength 
+            
+            return vx, vy
+        
+        # Create arrows for each cell
+        for i in range(n_rows):
+            for j in range(n_cols):
+                # Cell center
+                x = -grid_width/2 + (j + 0.5) * cell_width
+                y = -grid_height/2 + (i + 0.5) * cell_height
+                
+                # Get velocity at this point
+                vx, vy = get_velocity(x, y)
+                
+                # Create arrow - increased stroke width and tip size
+                arrow = Arrow(
+                    start=[x, y, 0],
+                    end=[x + vx, y + vy, 0],
+                    buff=0,
+                    stroke_width=3,
+                    color=LOGO_BLUE,
+                    max_tip_length_to_length_ratio=0.4,
+                    max_stroke_width_to_length_ratio=6 
+                )
+                arrows.add(arrow)
+        
+        # Animation for velocity field
+        self.play(Create(grid))
+        self.wait(0.5)
+        
+        # Show arrows with slight delay for visual interest
+        for arrow in arrows:
+            self.play(Create(arrow), run_time=0.05)
+        
+        # Pause to show the velocity field
+        self.wait(2)
+        
+        # PART 2: TRANSITION TO PATH TRACE
+        # Fade out the velocity arrows
+        self.play(FadeOut(arrows))
+        self.wait(0.5)
+        
+        # PART 3: PATH TRACE VISUALIZATION
+        # Create the paths for the particles
+        paths_right = VGroup()  # Paths flowing right
+        paths_left = VGroup()   # Paths flowing left
+        
+        # Define path 1 (top curve flowing right)
+        path1_start = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 3.5*cell_height, 0]
+        path1_end = [-grid_width/2 + 6*cell_width, -grid_height/2 + 4*cell_height, 0]
+        
+        # Use Bezier instead of CubicBezier with correct parameters
+        path1 = CubicBezier(
+            start_anchor=path1_start,
+            end_anchor=path1_end,
+            start_handle=path1_start + np.array([1*cell_width, 0.5*cell_height, 0]),
+            end_handle=np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 4.5*cell_height, 0])
+        )
+        path1.set_stroke(RED, width=2.5)
+        paths_right.add(path1)
+        
+        # Define path 1b (top curve flowing left - opposite direction)
+        path1b_start = path1_start.copy()  # Same starting point
+        path1b_end = [-grid_width/2 + 1*cell_width, -grid_height/2 + 4*cell_height, 0]
+        
+        path1b = CubicBezier(
+            start_anchor=path1b_start,
+            end_anchor=path1b_end,
+            start_handle=path1b_start + np.array([-0.8*cell_width, 1.2*cell_height, 0]),  # Different curvature
+            end_handle=np.array([-grid_width/2 + 1.8*cell_width, -grid_height/2 + 3.8*cell_height, 0])
+        )
+        path1b.set_stroke(RED, width=2.5)
+        paths_left.add(path1b)
+        
+        # Define path 2 (middle curve flowing right)
+        path2_start = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 2.5*cell_height, 0]
+        path2_end = [-grid_width/2 + 6*cell_width, -grid_height/2 + 2.5*cell_height, 0]
+        
+        path2 = CubicBezier(
+            start_anchor=path2_start,
+            end_anchor=path2_end,
+            start_handle=path2_start + np.array([1*cell_width, 0.2*cell_height, 0]),
+            end_handle=np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 2.8*cell_height, 0])
+        )
+        path2.set_stroke(RED, width=2.5)
+        paths_right.add(path2)
+        
+        # Define path 2b (middle curve flowing left - opposite direction)
+        path2b_start = path2_start.copy()  # Same starting point
+        path2b_end = [-grid_width/2 + 1*cell_width, -grid_height/2 + 2.5*cell_height, 0]
+        
+        path2b = CubicBezier(
+            start_anchor=path2b_start,
+            end_anchor=path2b_end,
+            start_handle=path2b_start + np.array([-1.5*cell_width, -0.4*cell_height, 0]),  # Different curvature
+            end_handle=np.array([-grid_width/2 + 2.2*cell_width, -grid_height/2 + 2.2*cell_height, 0])
+        )
+        path2b.set_stroke(RED, width=2.5)
+        paths_left.add(path2b)
+        
+        # Define path 3 (bottom curve flowing right)
+        path3_start = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 1.5*cell_height, 0]
+        path3_end = [-grid_width/2 + 6*cell_width, -grid_height/2 + 1.2*cell_height, 0]
+        
+        path3 = CubicBezier(
+            start_anchor=path3_start,
+            end_anchor=path3_end,
+            start_handle=path3_start + np.array([1*cell_width, -0.2*cell_height, 0]),
+            end_handle=np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 1*cell_height, 0])
+        )
+        path3.set_stroke(RED, width=2.5)
+        paths_right.add(path3)
+        
+        # Define path 3b (bottom curve flowing left - opposite direction)
+        path3b_start = path3_start.copy()  # Same starting point
+        path3b_end = [-grid_width/2 + 1*cell_width, -grid_height/2 + 1.2*cell_height, 0]
+        
+        path3b = CubicBezier(
+            start_anchor=path3b_start,
+            end_anchor=path3b_end,
+            start_handle=path3b_start + np.array([-1.2*cell_width, 0.7*cell_height, 0]),  # Different curvature
+            end_handle=np.array([-grid_width/2 + 1.8*cell_width, -grid_height/2 + 1.7*cell_height, 0])
+        )
+        path3b.set_stroke(RED, width=2.5)
+        paths_left.add(path3b)
+        
+        # Combine all paths for reference (right paths first, then left paths)
+        paths = VGroup()
+        paths.add(*paths_right)
+        paths.add(*paths_left)
+        
+        # Create arrows for start and end points of paths
+        path_markers_right = VGroup()
+        path_markers_left = VGroup()
+        
+        # Function to create a small square marker
+        def create_marker(position):
+            marker = Square(side_length=0.1, color=RED, fill_opacity=1)
+            marker.move_to(position)
+            return marker
+        
+        # Function to calculate tangent at a point on the Bezier curve
+        def get_tangent_direction(bezier, t):
+            # Get two very close points on the curve and find the direction
+            p1 = bezier.point_from_proportion(max(0, t - 0.01))
+            p2 = bezier.point_from_proportion(min(1, t + 0.01))
+            direction = p2 - p1
+            # Normalize the direction vector
+            length = np.linalg.norm(direction)
+            if length > 0:
+                direction = direction / length
+            return direction
+        
+        # Add start markers and arrowheads for right-flowing paths
+        for path in paths_right:
+            # Start marker
+            start_marker = create_marker(path.get_start())
+            path_markers_right.add(start_marker)
+            
+            # Create arrowhead on the curve
+            arrow_length = 0.25
+            t = 0.7  # Position along the path
+            point = path.point_from_proportion(t)
+            direction = get_tangent_direction(path, t)
+            arrow = Arrow(
+                start=point - direction * arrow_length/2,
+                end=point + direction * arrow_length/2,
+                buff=0,
+                stroke_width=2.5,
+                color=RED,
+                max_tip_length_to_length_ratio=0.5
+            )
+            path_markers_right.add(arrow)
+            
+            # End marker
+            end_marker = create_marker(path.get_end())
+            path_markers_right.add(end_marker)
+        
+        # Add start markers and arrowheads for left-flowing paths
+        for path in paths_left:
+            # Start marker
+            start_marker = create_marker(path.get_start())
+            path_markers_left.add(start_marker)
+            
+            # Create arrowhead on the curve
+            arrow_length = 0.25
+            t = 0.7  # Position along the path
+            point = path.point_from_proportion(t)
+            direction = get_tangent_direction(path, t)
+            arrow = Arrow(
+                start=point - direction * arrow_length/2,
+                end=point + direction * arrow_length/2,
+                buff=0,
+                stroke_width=2.5,
+                color=RED,
+                max_tip_length_to_length_ratio=0.5
+            )
+            path_markers_left.add(arrow)
+            
+            # End marker
+            end_marker = create_marker(path.get_end())
+            path_markers_left.add(end_marker)
+        
+        # Combine all markers
+        path_markers = VGroup()
+        path_markers.add(*path_markers_right)
+        path_markers.add(*path_markers_left)
+        
+        # Animation for path trace
+        # First, show starting points for right-flowing paths
+        start_markers_right = VGroup()
+        for i in range(len(paths_right)):
+            start_markers_right.add(path_markers_right[i*3])
+        
+        self.play(FadeIn(start_markers_right))
+        self.wait(0.5)
+        
+        # Draw the right-flowing paths with their arrows and end markers
+        for i in range(len(paths_right)):
+            path = paths_right[i]
+            path_arrow = path_markers_right[i*3 + 1]  # Arrow on the path
+            end_marker = path_markers_right[i*3 + 2]  # End marker
+            
+            self.play(
+                Create(path),
+                run_time=1
+            )
+            self.play(
+                FadeIn(path_arrow),
+                FadeIn(end_marker),
+                run_time=0.5
+            )
+            self.wait(0.3)
+        
+        self.wait(1)  # Pause before showing left-flowing paths
+        
+        # Show starting points for left-flowing paths (same as right-flowing ones)
+        # These are already shown above, so we don't need to show them again
+        
+        # Draw the left-flowing paths with their arrows and end markers
+        for i in range(len(paths_left)):
+            path = paths_left[i]
+            path_arrow = path_markers_left[i*3 + 1]  # Arrow on the path
+            end_marker = path_markers_left[i*3 + 2]  # End marker
+            
+            self.play(
+                Create(path),
+                run_time=1
+            )
+            self.play(
+                FadeIn(path_arrow),
+                FadeIn(end_marker),
+                run_time=0.5
+            )
+            self.wait(0.3)
 
