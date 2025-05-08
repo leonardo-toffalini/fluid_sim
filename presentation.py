@@ -573,12 +573,9 @@ class SimulationStepsAnimation(Scene):
         self.wait(1)
         
         # Add text to explain the loop
-        loop_text = Text("Repeat each timestep", font_size=20)
         # Position the text below the horizontal section of the elbow arrow
         text_position = (elbow_point2 + elbow_point3) / 2  # Middle of the bottom horizontal line
         text_position += DOWN * 0.3  # Move down a bit from the line
-        loop_text.move_to(text_position)
-        self.play(Write(loop_text))
         self.wait(2)
 
 class CellNeighborsAnimation(Scene):
