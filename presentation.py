@@ -778,6 +778,9 @@ class VelocityFieldAnimation(Scene):
         cell_width = grid_width / n_cols
         cell_height = grid_height / n_rows
         
+        # Set random seed for reproducibility with slight variation
+        np.random.seed(43)  # Changed seed for different randomness
+        
         # PART 1: VELOCITY FIELD VISUALIZATION
         # Create grid
         grid = VGroup()
@@ -864,7 +867,7 @@ class VelocityFieldAnimation(Scene):
             self.play(Create(arrow), run_time=0.05)
         
         # Pause to show the velocity field
-        self.wait(2)
+        self.wait(10)
         
         # PART 2: TRANSITION TO PATH TRACE
         # Fade out the velocity arrows
@@ -876,83 +879,99 @@ class VelocityFieldAnimation(Scene):
         paths_right = VGroup()  # Paths flowing right
         paths_left = VGroup()   # Paths flowing left
         
-        # Define path 1 (top curve flowing right)
-        path1_start = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 3.5*cell_height, 0]
-        path1_end = [-grid_width/2 + 6*cell_width, -grid_height/2 + 4*cell_height, 0]
+        # Function to add small random perturbation to point
+        def add_perturbation(point, scale=0.2):
+            # Add a tiny random perturbation in x and y
+            dx = np.random.uniform(-scale, scale) * cell_width
+            dy = np.random.uniform(-scale, scale) * cell_height
+            return [point[0] + dx, point[1] + dy, point[2]]
+        
+        # Define a common connection point for path1 and path1b
+        connection_point = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 3.5*cell_height, 0]
+        
+        # Define path1 (top curve flowing right)
+        path1_start = connection_point  # This is the common point
+        path1_end = add_perturbation([-grid_width/2 + 6.2*cell_width, -grid_height/2 + 4.1*cell_height, 0])
+        
+        # Define tangent vector at the connection point (for path1 - right direction)
+        path1_tangent = np.array([1.0*cell_width, 0.5*cell_height, 0])
         
         # Use Bezier instead of CubicBezier with correct parameters
         path1 = CubicBezier(
             start_anchor=path1_start,
             end_anchor=path1_end,
-            start_handle=path1_start + np.array([1*cell_width, 0.5*cell_height, 0]),
-            end_handle=np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 4.5*cell_height, 0])
+            start_handle=path1_start + path1_tangent,
+            end_handle=add_perturbation(np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 4.5*cell_height, 0]))
         )
         path1.set_stroke(RED, width=2.5)
         paths_right.add(path1)
         
         # Define path 1b (top curve flowing left - opposite direction)
-        path1b_start = path1_start.copy()  # Same starting point
-        path1b_end = [-grid_width/2 + 1*cell_width, -grid_height/2 + 4*cell_height, 0]
+        path1b_start = connection_point  # Same connection point
+        path1b_end = add_perturbation([-grid_width/2 + 1*cell_width, -grid_height/2 + 4*cell_height, 0])
+        
+        # Use negative of the same tangent vector at connection point for smooth transition
+        path1b_tangent = -path1_tangent
         
         path1b = CubicBezier(
             start_anchor=path1b_start,
             end_anchor=path1b_end,
-            start_handle=path1b_start + np.array([-0.8*cell_width, 1.2*cell_height, 0]),  # Different curvature
-            end_handle=np.array([-grid_width/2 + 1.8*cell_width, -grid_height/2 + 3.8*cell_height, 0])
+            start_handle=path1b_start + path1b_tangent,  # Use opposite direction tangent for smoothness
+            end_handle=add_perturbation(np.array([-grid_width/2 + 1.8*cell_width, -grid_height/2 + 3.8*cell_height, 0]))
         )
-        path1b.set_stroke(RED, width=2.5)
+        path1b.set_stroke(LOGO_BLUE, width=2.5)
         paths_left.add(path1b)
         
         # Define path 2 (middle curve flowing right)
         path2_start = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 2.5*cell_height, 0]
-        path2_end = [-grid_width/2 + 6*cell_width, -grid_height/2 + 2.5*cell_height, 0]
+        path2_end = add_perturbation([-grid_width/2 + 6*cell_width, -grid_height/2 + 2.5*cell_height, 0])
         
         path2 = CubicBezier(
             start_anchor=path2_start,
             end_anchor=path2_end,
             start_handle=path2_start + np.array([1*cell_width, 0.2*cell_height, 0]),
-            end_handle=np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 2.8*cell_height, 0])
+            end_handle=add_perturbation(np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 2.8*cell_height, 0]))
         )
         path2.set_stroke(RED, width=2.5)
         paths_right.add(path2)
         
         # Define path 2b (middle curve flowing left - opposite direction)
         path2b_start = path2_start.copy()  # Same starting point
-        path2b_end = [-grid_width/2 + 1*cell_width, -grid_height/2 + 2.5*cell_height, 0]
+        path2b_end = add_perturbation([-grid_width/2 + 1*cell_width, -grid_height/2 + 2.5*cell_height, 0])
         
         path2b = CubicBezier(
             start_anchor=path2b_start,
             end_anchor=path2b_end,
             start_handle=path2b_start + np.array([-1.5*cell_width, -0.4*cell_height, 0]),  # Different curvature
-            end_handle=np.array([-grid_width/2 + 2.2*cell_width, -grid_height/2 + 2.2*cell_height, 0])
+            end_handle=add_perturbation(np.array([-grid_width/2 + 2.2*cell_width, -grid_height/2 + 2.2*cell_height, 0]))
         )
-        path2b.set_stroke(RED, width=2.5)
+        path2b.set_stroke(LOGO_BLUE, width=2.5)
         paths_left.add(path2b)
         
         # Define path 3 (bottom curve flowing right)
         path3_start = [-grid_width/2 + 3.5*cell_width, -grid_height/2 + 1.5*cell_height, 0]
-        path3_end = [-grid_width/2 + 6*cell_width, -grid_height/2 + 1.2*cell_height, 0]
+        path3_end = add_perturbation([-grid_width/2 + 6*cell_width, -grid_height/2 + 1.2*cell_height, 0])
         
         path3 = CubicBezier(
             start_anchor=path3_start,
             end_anchor=path3_end,
             start_handle=path3_start + np.array([1*cell_width, -0.2*cell_height, 0]),
-            end_handle=np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 1*cell_height, 0])
+            end_handle=add_perturbation(np.array([-grid_width/2 + 5*cell_width, -grid_height/2 + 1*cell_height, 0]))
         )
         path3.set_stroke(RED, width=2.5)
         paths_right.add(path3)
         
         # Define path 3b (bottom curve flowing left - opposite direction)
         path3b_start = path3_start.copy()  # Same starting point
-        path3b_end = [-grid_width/2 + 1*cell_width, -grid_height/2 + 1.2*cell_height, 0]
+        path3b_end = add_perturbation([-grid_width/2 + 1*cell_width, -grid_height/2 + 1.2*cell_height, 0])
         
         path3b = CubicBezier(
             start_anchor=path3b_start,
             end_anchor=path3b_end,
             start_handle=path3b_start + np.array([-1.2*cell_width, 0.7*cell_height, 0]),  # Different curvature
-            end_handle=np.array([-grid_width/2 + 1.8*cell_width, -grid_height/2 + 1.7*cell_height, 0])
+            end_handle=add_perturbation(np.array([-grid_width/2 + 1.8*cell_width, -grid_height/2 + 1.7*cell_height, 0]))
         )
-        path3b.set_stroke(RED, width=2.5)
+        path3b.set_stroke(LOGO_BLUE, width=2.5)
         paths_left.add(path3b)
         
         # Combine all paths for reference (right paths first, then left paths)
@@ -965,8 +984,8 @@ class VelocityFieldAnimation(Scene):
         path_markers_left = VGroup()
         
         # Function to create a small square marker
-        def create_marker(position):
-            marker = Square(side_length=0.1, color=RED, fill_opacity=1)
+        def create_marker(position, color=RED):
+            marker = Square(side_length=0.1, color=color, fill_opacity=1)
             marker.move_to(position)
             return marker
         
@@ -985,7 +1004,7 @@ class VelocityFieldAnimation(Scene):
         # Add start markers and arrowheads for right-flowing paths
         for path in paths_right:
             # Start marker
-            start_marker = create_marker(path.get_start())
+            start_marker = create_marker(path.get_start(), RED)
             path_markers_right.add(start_marker)
             
             # Create arrowhead on the curve
@@ -1004,13 +1023,13 @@ class VelocityFieldAnimation(Scene):
             path_markers_right.add(arrow)
             
             # End marker
-            end_marker = create_marker(path.get_end())
+            end_marker = create_marker(path.get_end(), RED)
             path_markers_right.add(end_marker)
         
         # Add start markers and arrowheads for left-flowing paths
         for path in paths_left:
             # Start marker
-            start_marker = create_marker(path.get_start())
+            start_marker = create_marker(path.get_start(), LOGO_BLUE)
             path_markers_left.add(start_marker)
             
             # Create arrowhead on the curve
@@ -1023,13 +1042,13 @@ class VelocityFieldAnimation(Scene):
                 end=point + direction * arrow_length/2,
                 buff=0,
                 stroke_width=2.5,
-                color=RED,
+                color=LOGO_BLUE,
                 max_tip_length_to_length_ratio=0.5
             )
             path_markers_left.add(arrow)
             
             # End marker
-            end_marker = create_marker(path.get_end())
+            end_marker = create_marker(path.get_end(), LOGO_BLUE)
             path_markers_left.add(end_marker)
         
         # Combine all markers
