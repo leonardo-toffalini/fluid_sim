@@ -1104,3 +1104,218 @@ class VelocityFieldAnimation(Scene):
             )
             self.wait(0.3)
 
+class HodgeDecompositionAnimation(Scene):
+    def construct(self):
+        # Parameters
+        n_rows, n_cols = 10, 10  # Using finer grid for better detail
+        grid_width, grid_height = 3.5, 3.5  # Further reduced grid size to create more space
+        cell_width = grid_width / n_cols
+        cell_height = grid_height / n_rows
+        
+        # Positions adjusted with more spacing for equation symbols
+        left_pos = LEFT * 5    # More spread out horizontally
+        center_pos = ORIGIN
+        right_pos = RIGHT * 5  # More spread out horizontally
+        
+        # Equation symbol positions with more space
+        equals_pos = LEFT * 2.5
+        plus_pos = RIGHT * 2.5
+        
+        # Function to create a grid
+        def create_grid():
+            grid_lines = VGroup()
+            # Horizontal lines
+            for i in range(n_rows + 1):
+                h_line = Line(
+                    start=[-grid_width/2, -grid_height/2 + i * cell_height, 0],
+                    end=[grid_width/2, -grid_height/2 + i * cell_height, 0],
+                    stroke_width=1.0,  # Increased stroke width
+                    color=WHITE,  # Changed to WHITE for visibility on black background
+                    stroke_opacity=0.3  # Reduced opacity for subtlety
+                )
+                grid_lines.add(h_line)
+            
+            # Vertical lines
+            for j in range(n_cols + 1):
+                v_line = Line(
+                    start=[-grid_width/2 + j * cell_width, -grid_height/2, 0],
+                    end=[-grid_width/2 + j * cell_width, grid_height/2, 0],
+                    stroke_width=1.0,  # Increased stroke width
+                    color=WHITE,  # Changed to WHITE for visibility on black background
+                    stroke_opacity=0.3  # Reduced opacity for subtlety
+                )
+                grid_lines.add(v_line)
+            
+            return grid_lines
+        
+        # Functions for velocity fields
+        
+        # 1. Combined velocity field (left image)
+        def combined_field(x, y):
+            # Distance from center
+            dx = x
+            dy = y
+            distance = np.sqrt(dx**2 + dy**2)
+            
+            # Combine curl and divergence patterns
+            
+            # Rotational component (curl)
+            curl_strength = 1.0 - min(1.0, distance / 2.5)
+            vx_curl = -dy * curl_strength
+            vy_curl = dx * curl_strength
+            
+            # Divergence component (gradient)
+            div_strength = 1.0 - min(1.0, distance / 2.5)
+            vx_div = dx * div_strength
+            vy_div = dy * div_strength
+            
+            # Combine the two fields
+            vx = vx_curl * 0.7 + vx_div * 0.3
+            vy = vy_curl * 0.7 + vy_div * 0.3
+            
+            # Add some noise for realism
+            vx += np.random.uniform(-0.1, 0.1)
+            vy += np.random.uniform(-0.1, 0.1)
+            
+            # Normalize and scale
+            magnitude = np.sqrt(vx**2 + vy**2)
+            if magnitude > 0:
+                scale_factor = min(1.0, magnitude) * cell_width * 0.85
+                vx = vx / magnitude * scale_factor
+                vy = vy / magnitude * scale_factor
+            
+            return vx, vy
+        
+        # 2. Curl field (divergence-free, middle image)
+        def curl_field(x, y):
+            # Distance from center
+            dx = x
+            dy = y
+            distance = np.sqrt(dx**2 + dy**2)
+            
+            # Rotational component (curl)
+            curl_strength = 1.0 - min(1.0, distance / 2.5)
+            vx = -dy * curl_strength
+            vy = dx * curl_strength
+            
+            # Add some noise for realism
+            vx += np.random.uniform(-0.1, 0.1)
+            vy += np.random.uniform(-0.1, 0.1)
+            
+            # Normalize and scale
+            magnitude = np.sqrt(vx**2 + vy**2)
+            if magnitude > 0:
+                scale_factor = min(1.0, magnitude) * cell_width * 0.85
+                vx = vx / magnitude * scale_factor
+                vy = vy / magnitude * scale_factor
+            
+            return vx, vy
+        
+        # 3. Gradient field (right image)
+        def gradient_field(x, y):
+            # Distance from center
+            dx = x
+            dy = y
+            distance = np.sqrt(dx**2 + dy**2)
+            
+            # Divergence component (gradient)
+            div_strength = 1.0 - min(1.0, distance / 2.5)
+            vx = dx * div_strength
+            vy = dy * div_strength
+            
+            # Add some noise for realism
+            vx += np.random.uniform(-0.1, 0.1)
+            vy += np.random.uniform(-0.1, 0.1)
+            
+            # Normalize and scale
+            magnitude = np.sqrt(vx**2 + vy**2)
+            if magnitude > 0:
+                scale_factor = min(1.0, magnitude) * cell_width * 0.85
+                vx = vx / magnitude * scale_factor
+                vy = vy / magnitude * scale_factor
+            
+            return vx, vy
+        
+        # Function to create velocity field visualization
+        def create_velocity_field(field_function, position):
+            arrows = VGroup()
+            
+            for i in range(n_rows):
+                for j in range(n_cols):
+                    # Cell center
+                    x = -grid_width/2 + (j + 0.5) * cell_width
+                    y = -grid_height/2 + (i + 0.5) * cell_height
+                    
+                    # Get velocity at this point
+                    vx, vy = field_function(x, y)
+                    
+                    # Create arrow
+                    arrow = Arrow(
+                        start=[x, y, 0],
+                        end=[x + vx, y + vy, 0],
+                        buff=0,
+                        stroke_width=2.0,  # Increased stroke width
+                        color=WHITE,  # Changed to WHITE for visibility
+                        max_tip_length_to_length_ratio=0.3,
+                        max_stroke_width_to_length_ratio=5
+                    )
+                    arrows.add(arrow)
+            
+            # Create background for each field to help with visibility
+            background = Square(
+                side_length=max(grid_width, grid_height),
+                fill_color=DARK_GREY,
+                fill_opacity=0.2,
+                stroke_width=0
+            )
+            
+            field = VGroup(background, create_grid(), arrows)
+            field.move_to(position)
+            return field
+        
+        # Create the three velocity field visualizations with the new positions
+        combined = create_velocity_field(combined_field, left_pos)
+        curl = create_velocity_field(curl_field, center_pos)
+        gradient = create_velocity_field(gradient_field, right_pos)
+        
+        # Create equation symbols with enlarged size and well-positioned
+        equals = MathTex("=").scale(2.0).move_to(equals_pos)
+        plus = MathTex("+").scale(2.0).move_to(plus_pos)
+        
+        # Create labels with white text for visibility and positioned for 16:9
+        combined_label = Text("Combined Field", font_size=22, color=WHITE).next_to(combined, DOWN, buff=0.3)
+        curl_label = Text("Curl Field\n(Divergence-free)", font_size=22, color=WHITE).next_to(curl, DOWN, buff=0.3)
+        gradient_label = Text("Gradient Field", font_size=22, color=WHITE).next_to(gradient, DOWN, buff=0.3)
+        
+        # Create title with more space at top for 16:9 format
+        title = Title("Hodge Decomposition of Vector Fields", color=WHITE).shift(UP * 0.3)
+        
+        # Animation sequence
+        self.play(Write(title))
+        self.wait(0.5)
+        
+        # Show the combined field first
+        self.play(FadeIn(combined[0]))  # Fade in background
+        self.play(Create(combined[1]))  # Draw grid
+        self.play(Create(combined[2]))  # Draw arrows
+        self.play(Write(combined_label))
+        self.wait(1)
+        
+        # Show equals sign and the curl field
+        self.play(Write(equals))
+        self.play(FadeIn(curl[0]))  # Fade in background
+        self.play(Create(curl[1]))  # Draw grid
+        self.play(Create(curl[2]))  # Draw arrows
+        self.play(Write(curl_label))
+        self.wait(1)
+        
+        # Show plus sign and the gradient field
+        self.play(Write(plus))
+        self.play(FadeIn(gradient[0]))  # Fade in background
+        self.play(Create(gradient[1]))  # Draw grid
+        self.play(Create(gradient[2]))  # Draw arrows
+        self.play(Write(gradient_label))
+        self.wait(1)
+        
+        # Final pause to appreciate the decomposition
+        self.wait(3)
