@@ -23,22 +23,7 @@ python main.py --test-scenario <0|1|2|3|4|5|6>
 ```
 
 ### How it works
-#### Navier-Stokes equations
-The following two partial differential equations characterize fluids. Our goal is to solve these equations to simulate the behaviour of fluids.
-$$
-\frac{\partial u}{\partial t} = -(u \cdot \nabla) u+\nu \nabla^2 u+\mathbf{f}
-$$
-$$
-\frac{\partial \rho}{\partial t} = -(u \cdot \nabla) \rho+\kappa \nabla^2 \rho+S
-$$
-
-#### Diagram of the flow of the simulation
-
-
-#### Dense step
-
-
-#### Vel step
+You can find a detailed description of the ways of working of the simulation at `simulation.md`.
 
 
 ### Future goals
