@@ -2,6 +2,10 @@
 This project aims to provide a succinct python implementation of the Eulerian fluid simulation 
 described in <http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf>
 
+
+https://github.com/user-attachments/assets/04b7ccc0-f436-43c4-a9bc-710d86bd857c
+
+
 ### Getting Started
 Run the following command:
 ```sh
